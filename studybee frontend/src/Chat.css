@@ -1,0 +1,118 @@
+.chat-page {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: #fff;
+  background-image: radial-gradient(circle at 20% 20%, #FFF9E3 0%, transparent 40%);
+}
+
+/* Glassy Sidebar */
+.chat-sidebar {
+  width: 260px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid #eee;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo { font-size: 1.5rem; font-weight: 900; margin-bottom: 40px; }
+.sidebar-logo span { color: #FFB800; }
+
+.side-item {
+  padding: 15px;
+  margin-bottom: 10px;
+  border: none;
+  background: none;
+  text-align: left;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.side-item.active { background: #FFF9E3; color: #FFA500; }
+.side-item:hover:not(.active) { background: #f9f9f9; }
+
+.back-btn { margin-top: auto; border: none; background: none; color: #aaa; cursor: pointer; }
+
+/* Main Chat Area */
+.chat-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.chat-window {
+  width: 100%;
+  max-width: 900px;
+  height: 85vh;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 30px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+}
+
+.messages-container {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.message-bubble {
+  max-width: 70%;
+  padding: 15px 20px;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.message-bubble.bee {
+  align-self: flex-start;
+  background: #FFF9E3;
+  color: #2E2E2E;
+  border-bottom-left-radius: 2px;
+}
+
+.message-bubble.user {
+  align-self: flex-end;
+  background: #FFB800;
+  color: #fff;
+  border-bottom-right-radius: 2px;
+}
+
+.input-area {
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  gap: 15px;
+  border-top: 1px solid #eee;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 15px 20px;
+  border: 1px solid #ddd;
+  border-radius: 15px;
+  outline: none;
+}
+
+.send-btn {
+  padding: 0 25px;
+  background: #FFB800;
+  border: none;
+  border-radius: 15px;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+}

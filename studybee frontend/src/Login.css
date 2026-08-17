@@ -1,0 +1,126 @@
+:root {
+  --honey-yellow: #FFD700;
+  --honey-saturated: #FFB800; 
+  --honey-accent: #FFA500;
+  --bee-charcoal: #2E2E2E;
+  --bg-pure-white: #FFFFFF;
+  --hex-faint: #FFFDF0;
+}
+
+.login-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-pure-white);
+  
+  /* Background Hexagons */
+  background-image:  
+    linear-gradient(30deg, var(--hex-faint) 12%, transparent 12.5%, transparent 87%, var(--hex-faint) 87.5%, var(--hex-faint)),
+    linear-gradient(150deg, var(--hex-faint) 12%, transparent 12.5%, transparent 87%, var(--hex-faint) 87.5%, var(--hex-faint));
+  background-size: 80px 140px;
+}
+
+/* THE FIX: Tileable Drip Ceiling */
+.honey-ceiling-drip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100px; /* How far down the drips go */
+  background-color: var(--honey-saturated);
+  z-index: 10;
+  box-shadow: 0 10px 25px rgba(255, 184, 0, 0.3);
+  
+  /* This SVG creates a repeating "U" shape drip */
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 0 v60 Q25 100 50 60 Q75 100 100 60 v-60 z" fill="black"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 0 v60 Q25 100 50 60 Q75 100 100 60 v-60 z" fill="black"/></svg>');
+  
+  /* Crucial: This makes the "bumpy" drips repeat instead of stretching */
+  -webkit-mask-size: 200px 100%; 
+  mask-size: 200px 100%;
+  -webkit-mask-repeat: repeat-x;
+  mask-repeat: repeat-x;
+}
+
+/* BIG DROPS */
+.honey-drop {
+  position: absolute;
+  background: var(--honey-saturated);
+  width: 25px;
+  height: 40px;
+  border-radius: 50% 50% 50% 50% / 100% 100% 40% 40%;
+  top: -50px;
+  z-index: 2;
+  box-shadow: inset -3px -5px 8px rgba(0,0,0,0.1), 0 5px 15px rgba(255, 184, 0, 0.3);
+  animation: dripFall 6s infinite ease-in;
+}
+
+/* Randomize positions */
+.honey-drop:nth-child(2) { left: 15%; animation-delay: 0s; }
+.honey-drop:nth-child(3) { left: 40%; animation-delay: 2s; transform: scale(0.8); }
+.honey-drop:nth-child(4) { left: 70%; animation-delay: 4s; transform: scale(1.2); }
+.honey-drop:nth-child(5) { left: 85%; animation-delay: 1.5s; }
+
+@keyframes dripFall {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(110vh); opacity: 0.2; }
+}
+
+.honey-card {
+  background: #ffffff;
+  padding: 50px;
+  width: 380px;
+  text-align: center;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.05);
+  border: 4px solid var(--honey-yellow);
+  z-index: 5;
+  clip-path: polygon(10% 0%, 90% 0%, 100% 15%, 100% 85%, 90% 100%, 10% 100%, 0% 85%, 0% 15%);
+}
+
+.honey-title {
+  color: var(--bee-charcoal);
+  font-size: 2.8rem;
+  font-weight: 900;
+}
+
+.bee-span { color: var(--honey-saturated); }
+
+.subtitle { color: #888; margin-bottom: 30px; font-size: 0.9rem; }
+
+.input-box input {
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 15px;
+  border: 1.5px solid #eee;
+  border-radius: 12px;
+  outline: none;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--honey-yellow), var(--honey-accent));
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.toggle-text { margin-top: 20px; color: #999; font-size: 0.8rem; }
+.toggle-text span { color: var(--honey-accent); font-weight: 800; cursor: pointer; }
+
+.honey-title::after {
+  content: ' 🐝';
+  animation: fly 3s infinite ease-in-out;
+  display: inline-block;
+}
+
+@keyframes fly {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
