@@ -1,20 +1,38 @@
 import React from 'react';
 import './Home.css';
 
-// 1. Added 'onSelectFeature' to the props here
 const Home = ({ onLogout, onSelectFeature }) => {
   const features = [
-    { id: 1, title: 'Find Answers', icon: '🔍', desc: 'Scan your PDFs for instant solutions.' },
-    { id: 2, title: 'Generate Quiz', icon: '📝', desc: 'Turn your notes into practice tests.' },
-    { id: 3, title: 'Summarize Notes', icon: '📜', desc: 'Shorten long chapters into key points.' },
-    { id: 4, title: 'AI Bee', icon: '🐝', desc: 'Chat with your personal study assistant.' },
+    {
+      id: 'find-answers',
+      title: 'Find Answers',
+      icon: '🔍',
+      desc: 'Scan your PDFs for instant solutions.',
+    },
+    {
+      id: 'generate-quiz',
+      title: 'Generate Quiz',
+      icon: '📝',
+      desc: 'Turn your notes into practice tests.',
+    },
+    {
+      id: 'summarize-notes',
+      title: 'Summarize Notes',
+      icon: '📜',
+      desc: 'Shorten long chapters into key points.',
+    },
+    {
+      id: 'ai-bee',
+      title: 'AI Bee',
+      icon: '🐝',
+      desc: 'Chat with your personal study assistant.',
+    },
   ];
 
   return (
     <div className="home-container">
-      {/* Decorative Honey Drip at the top */}
       <div className="home-drip"></div>
-      
+
       <nav className="home-nav">
         <h1 className="home-logo">Study<span>Bee</span></h1>
         <button className="logout-link" onClick={onLogout}>Exit Hive</button>
@@ -28,11 +46,9 @@ const Home = ({ onLogout, onSelectFeature }) => {
               <div className="feature-icon">{f.icon}</div>
               <h3>{f.title}</h3>
               <p>{f.desc}</p>
-              
-              {/* 2. Added onClick to the button to trigger the screen change */}
-              <button className="go-btn" onClick={onSelectFeature}>
+              <button className="go-btn" onClick={() => onSelectFeature(f.id)}>
                 Start →
-              </button>    
+              </button>
             </div>
           ))}
         </div>

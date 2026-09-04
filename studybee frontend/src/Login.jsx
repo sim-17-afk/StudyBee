@@ -3,6 +3,10 @@ import './Login.css';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// ── Local storage helpers ─────────────────────────────────────────────────────
+const getUsers = () => JSON.parse(localStorage.getItem('studybee_users') || '{}');
+const saveUsers = (users) => localStorage.setItem('studybee_users', JSON.stringify(users));
+
 const Login = ({ onLogin }) => {
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail]       = useState('');
@@ -26,35 +30,40 @@ const Login = ({ onLogin }) => {
     return errs;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+
     setErrors({});
     setLoading(true);
 
-    try {
-      const endpoint = isSignup ? '/api/register' : '/api/login';
-      const res = await fetch(`http://localhost:5000${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
+    // Small delay to feel responsive
+    setTimeout(() => {
+      const key = email.trim().toLowerCase();
+      const users = getUsers();
 
-      if (!res.ok) {
-        setErrors({ server: data.error || 'Something went wrong.' });
+      if (isSignup) {
+        // ── Register ──
+        if (users[key]) {
+          setErrors({ server: 'An account with this email already exists.' });
+          setLoading(false);
+          return;
+        }
+        users[key] = { email: key, password };
+        saveUsers(users);
+        onLogin(key);
       } else {
-        onLogin();
+        // ── Login ──
+        const user = users[key];
+        if (!user || user.password !== password) {
+          setErrors({ server: 'Invalid email or password.' });
+          setLoading(false);
+          return;
+        }
+        onLogin(key);
       }
-    } catch {
-      setErrors({ server: 'Unable to connect to the server.' });
-    } finally {
-      setLoading(false);
-    }
+    }, 400);
   };
 
   const switchMode = () => {
@@ -63,6 +72,7 @@ const Login = ({ onLogin }) => {
     setEmail('');
     setPassword('');
     setShowPass(false);
+    setLoading(false);
   };
 
   return (
@@ -112,7 +122,6 @@ const Login = ({ onLogin }) => {
               onChange={(e) => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })); }}
               autoComplete={isSignup ? 'new-password' : 'current-password'}
             />
-            {/* Show/hide toggle — only shown during signup */}
             {isSignup && (
               <button
                 type="button"
@@ -121,14 +130,12 @@ const Login = ({ onLogin }) => {
                 aria-label={showPass ? 'Hide password' : 'Show password'}
               >
                 {showPass ? (
-                  /* Eye-off icon */
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
                     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
                     <line x1="1" y1="1" x2="23" y2="23"/>
                   </svg>
                 ) : (
-                  /* Eye icon */
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>

@@ -6,35 +6,42 @@ import './App.css';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [screen, setScreen] = useState('dashboard'); // Tracks 'dashboard' or 'chat'
+  const [screen, setScreen] = useState('dashboard');
+  const [activeFeature, setActiveFeature] = useState('ai-bee');
 
-  // Function to handle a clean logout
   const handleLogout = () => {
     setIsLoggedIn(false);
-    setScreen('dashboard'); // Reset the screen so the next login starts fresh
+    setScreen('dashboard');
   };
 
-  // 1. Show Login if not authenticated
+  const handleSelectFeature = (featureId) => {
+    setActiveFeature(featureId);
+    setScreen('chat');
+  };
+
   if (!isLoggedIn) {
     return <Login onLogin={() => setIsLoggedIn(true)} />;
   }
 
-  // 2. Show Home Dashboard
   if (screen === 'dashboard') {
     return (
-      <Home 
-        onLogout={handleLogout} 
-        onSelectFeature={() => setScreen('chat')} 
+      <Home
+        onLogout={handleLogout}
+        onSelectFeature={handleSelectFeature}
       />
     );
   }
 
-  // 3. Show Chat UI
   if (screen === 'chat') {
-    return <Chat onBack={() => setScreen('dashboard')} />;
+    return (
+      <Chat
+        onBack={() => setScreen('dashboard')}
+        initialMode={activeFeature}
+      />
+    );
   }
 
-  return null; // Fallback
+  return null;
 }
 
 export default App;
