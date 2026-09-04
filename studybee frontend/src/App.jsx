@@ -5,11 +5,22 @@ import Chat from './Chat';
 import './App.css';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Persist login state across refreshes
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    () => localStorage.getItem('studybee_session') === 'true'
+  );
   const [screen, setScreen] = useState('dashboard');
   const [activeFeature, setActiveFeature] = useState('ai-bee');
 
+  const handleLogin = (email) => {
+    localStorage.setItem('studybee_session', 'true');
+    localStorage.setItem('studybee_current_user', email);
+    setIsLoggedIn(true);
+  };
+
   const handleLogout = () => {
+    localStorage.removeItem('studybee_session');
+    localStorage.removeItem('studybee_current_user');
     setIsLoggedIn(false);
     setScreen('dashboard');
   };
@@ -20,7 +31,7 @@ function App() {
   };
 
   if (!isLoggedIn) {
-    return <Login onLogin={() => setIsLoggedIn(true)} />;
+    return <Login onLogin={handleLogin} />;
   }
 
   if (screen === 'dashboard') {
