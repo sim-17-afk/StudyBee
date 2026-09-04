@@ -91,13 +91,89 @@
 
 .subtitle { color: #888; margin-bottom: 30px; font-size: 0.9rem; }
 
+.input-box {
+  position: relative;
+  margin-bottom: 6px;
+}
+
 .input-box input {
   width: 100%;
   padding: 15px;
-  margin-bottom: 15px;
   border: 1.5px solid #eee;
   border-radius: 12px;
   outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.input-box input:focus {
+  border-color: var(--honey-yellow);
+}
+
+.input-box.has-error input {
+  border-color: #e74c3c;
+}
+
+.field-error {
+  display: block;
+  color: #e74c3c;
+  font-size: 0.75rem;
+  text-align: left;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  padding-left: 4px;
+}
+
+.pass-hint {
+  display: block;
+  color: #aaa;
+  font-size: 0.72rem;
+  text-align: left;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  padding-left: 4px;
+}
+
+/* Password show/hide wrapper */
+.password-box {
+  position: relative;
+}
+
+.password-box input {
+  padding-right: 48px;
+}
+
+.toggle-pass {
+  position: absolute;
+  top: 13px;
+  right: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.toggle-pass:hover { color: var(--honey-accent); }
+
+.toggle-pass svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Server-level error banner */
+.error-banner {
+  background: #ffeaea;
+  border: 1.5px solid #e74c3c;
+  color: #c0392b;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  margin-bottom: 16px;
+  text-align: left;
 }
 
 .login-btn {
@@ -109,7 +185,12 @@
   color: #fff;
   font-weight: 900;
   cursor: pointer;
+  margin-top: 8px;
+  transition: opacity 0.2s, transform 0.1s;
 }
+
+.login-btn:hover:not(:disabled) { transform: translateY(-2px); opacity: 0.92; }
+.login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .toggle-text { margin-top: 20px; color: #999; font-size: 0.8rem; }
 .toggle-text span { color: var(--honey-accent); font-weight: 800; cursor: pointer; }
