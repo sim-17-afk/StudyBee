@@ -43,13 +43,22 @@ Keep everything concise and student-friendly. Use simple language.`,
   },
 };
 
+// ── Real-time date context ───────────────────────────────────────────────────
+function getRealTimeContext() {
+  const now = new Date();
+  return `[Current date & time: ${now.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}]`;
+}
+
 // ── OpenRouter call ───────────────────────────────────────────────────────────
 async function callOpenRouter(mode, messages) {
   const config = MODES[mode];
+  const systemContent = `${getRealTimeContext()}\n\n${config.systemPrompt}`;
   const payload = {
     model: MODEL,
     messages: [
-      { role: 'system', content: config.systemPrompt },
+      { role: 'system', content: systemContent },
       ...messages.map((m) => ({
         role: m.role === 'bee' ? 'assistant' : 'user',
         content: m.text,
