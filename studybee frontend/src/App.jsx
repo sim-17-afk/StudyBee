@@ -5,12 +5,15 @@ import Chat from './Chat';
 import './App.css';
 
 function App() {
-  // Persist login state across refreshes
   const [isLoggedIn, setIsLoggedIn] = useState(
     () => localStorage.getItem('studybee_session') === 'true'
   );
-  const [screen, setScreen] = useState('dashboard');
-  const [activeFeature, setActiveFeature] = useState('ai-bee');
+  const [screen, setScreen] = useState(
+    () => localStorage.getItem('studybee_screen') || 'dashboard'
+  );
+  const [activeFeature, setActiveFeature] = useState(
+    () => localStorage.getItem('studybee_feature') || 'ai-bee'
+  );
 
   const handleLogin = (email) => {
     localStorage.setItem('studybee_session', 'true');
@@ -21,11 +24,20 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('studybee_session');
     localStorage.removeItem('studybee_current_user');
+    localStorage.removeItem('studybee_screen');
+    localStorage.removeItem('studybee_feature');
     setIsLoggedIn(false);
     setScreen('dashboard');
   };
 
+  const goTo = (newScreen) => {
+    localStorage.setItem('studybee_screen', newScreen);
+    setScreen(newScreen);
+  };
+
   const handleSelectFeature = (featureId) => {
+    localStorage.setItem('studybee_feature', featureId);
+    localStorage.setItem('studybee_screen', 'chat');
     setActiveFeature(featureId);
     setScreen('chat');
   };
@@ -46,7 +58,7 @@ function App() {
   if (screen === 'chat') {
     return (
       <Chat
-        onBack={() => setScreen('dashboard')}
+        onBack={() => goTo('dashboard')}
         initialMode={activeFeature}
       />
     );
