@@ -109,6 +109,8 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
   }, [messages]);
 
   const switchMode = (newMode) => {
+    localStorage.setItem('studybee_feature', newMode);
+    localStorage.setItem('studybee_screen', 'chat');
     setMode(newMode);
     setInput('');
   };
