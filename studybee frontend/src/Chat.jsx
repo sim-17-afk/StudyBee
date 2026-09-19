@@ -461,13 +461,63 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
             <div ref={bottomRef} />
           </div>
 
-          {/* ── Find Answers Upload Panel ─────────────────────────────────── */}
-          {isFindAnswers && (
-            <div className="upload-panel">
-              <div className="upload-panel-label">⚡ Quick Upload Workflow</div>
-              <div className="upload-row">
-                {/* Upload Notes */}
-                <div className="upload-zone">
+          {/* Input area */}
+          <div className="input-area">
+            {/* Active Chips Strip (Topic / Attached Files) */}
+            {((isGenerateQuiz && (quizTopic || quizNotesFiles.length > 0)) ||
+              (isFindAnswers && (notesFiles.length > 0 || questionsFiles.length > 0))) && (
+              <div className="input-chips-bar">
+                <span className="input-chips-label">Attached:</span>
+                {isGenerateQuiz && quizTopic && (
+                  <span className="file-chip topic-chip">
+                    🎯 Topic: <strong>{quizTopic}</strong>
+                    <button
+                      className="file-chip-remove"
+                      onClick={() => setQuizTopic('')}
+                      title="Clear topic"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+                {isGenerateQuiz &&
+                  quizNotesFiles.map((f, i) => (
+                    <FileChip
+                      key={i}
+                      file={f}
+                      onRemove={() =>
+                        setQuizNotesFiles((prev) => prev.filter((_, idx) => idx !== i))
+                      }
+                    />
+                  ))}
+                {isFindAnswers &&
+                  notesFiles.map((f, i) => (
+                    <FileChip
+                      key={i}
+                      file={f}
+                      onRemove={() =>
+                        setNotesFiles((prev) => prev.filter((_, idx) => idx !== i))
+                      }
+                    />
+                  ))}
+                {isFindAnswers &&
+                  questionsFiles.map((f, i) => (
+                    <FileChip
+                      key={i}
+                      file={f}
+                      onRemove={() =>
+                        setQuestionsFiles((prev) => prev.filter((_, idx) => idx !== i))
+                      }
+                    />
+                  ))}
+              </div>
+            )}
+
+            {/* Input row: buttons between left panel and text box */}
+            <div className="input-row">
+              {/* Find Answers: 3 compact honeycomb buttons */}
+              {isFindAnswers && (
+                <div className="side-action-buttons">
                   <input
                     ref={notesInputRef}
                     type="file"
@@ -477,31 +527,6 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                     onChange={(e) => setNotesFiles((prev) => addFiles(prev, Array.from(e.target.files)))}
                     id="notes-upload"
                   />
-                  <button
-                    className="upload-btn notes-btn"
-                    onClick={() => notesInputRef.current?.click()}
-                    disabled={loading || processingFiles}
-                  >
-                    <span className="upload-btn-step">1</span>
-                    <div className="upload-btn-icon-wrap">📚</div>
-                    <strong>Upload Notes</strong>
-                    <small>PDF · PPT · Images</small>
-                  </button>
-                  {notesFiles.length > 0 && (
-                    <div className="file-chips">
-                      {notesFiles.map((f, i) => (
-                        <FileChip
-                          key={i}
-                          file={f}
-                          onRemove={() => setNotesFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Upload Questions */}
-                <div className="upload-zone">
                   <input
                     ref={questionsInputRef}
                     type="file"
@@ -511,81 +536,57 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                     onChange={(e) => setQuestionsFiles((prev) => addFiles(prev, Array.from(e.target.files)))}
                     id="questions-upload"
                   />
+
+                  {/* 1: Upload Notes */}
                   <button
-                    className="upload-btn questions-btn"
+                    className={`mini-hex-btn notes-btn ${notesFiles.length > 0 ? 'has-value' : ''}`}
+                    onClick={() => notesInputRef.current?.click()}
+                    disabled={loading || processingFiles}
+                    title="Upload Notes (PDF, PPT, Images)"
+                  >
+                    <span className="mini-btn-step">1</span>
+                    <div className="mini-btn-icon">📚</div>
+                    <div className="mini-btn-text">
+                      <strong>Notes</strong>
+                      <small>{notesFiles.length > 0 ? `${notesFiles.length} file${notesFiles.length > 1 ? 's' : ''}` : 'Upload'}</small>
+                    </div>
+                  </button>
+
+                  {/* 2: Upload Questions */}
+                  <button
+                    className={`mini-hex-btn questions-btn ${questionsFiles.length > 0 ? 'has-value' : ''}`}
                     onClick={() => questionsInputRef.current?.click()}
                     disabled={loading || processingFiles}
+                    title="Upload Questions (PDF, PPT, Images, TXT)"
                   >
-                    <span className="upload-btn-step">2</span>
-                    <div className="upload-btn-icon-wrap">❓</div>
-                    <strong>Upload Questions</strong>
-                    <small>PDF · PPT · Images · TXT</small>
-                  </button>
-                  {questionsFiles.length > 0 && (
-                    <div className="file-chips">
-                      {questionsFiles.map((f, i) => (
-                        <FileChip
-                          key={i}
-                          file={f}
-                          onRemove={() => setQuestionsFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                        />
-                      ))}
+                    <span className="mini-btn-step">2</span>
+                    <div className="mini-btn-icon">❓</div>
+                    <div className="mini-btn-text">
+                      <strong>Questions</strong>
+                      <small>{questionsFiles.length > 0 ? `${questionsFiles.length} file${questionsFiles.length > 1 ? 's' : ''}` : 'Upload'}</small>
                     </div>
-                  )}
-                </div>
+                  </button>
 
-                {/* Find Answers */}
-                <button
-                  className="find-answers-btn"
-                  onClick={handleFindAnswers}
-                  disabled={!canFindAnswers}
-                >
-                  <div className="upload-btn-icon-wrap">🔍</div>
-                  <strong>Find Answers</strong>
-                  <small>{processingFiles ? 'Processing...' : 'Step 3 · Go!'}</small>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ── Generate Quiz Panel ───────────────────────────────────────── */}
-          {isGenerateQuiz && (
-            <div className="upload-panel quiz-panel">
-              <div className="upload-panel-label">📝 Honeycomb Quiz Creator</div>
-              <div className="upload-row">
-                {/* Button 1: Enter Topic */}
-                <div className="upload-zone">
+                  {/* 3: Find Answers CTA */}
                   <button
-                    className={`upload-btn topic-btn ${quizTopic ? 'has-value' : ''}`}
-                    onClick={() => {
-                      setTempTopicInput(quizTopic);
-                      setIsTopicModalOpen(true);
-                    }}
-                    disabled={loading || processingFiles}
+                    className="mini-hex-btn mini-hex-cta"
+                    onClick={handleFindAnswers}
+                    disabled={!canFindAnswers}
+                    title="Find Answers"
                   >
-                    <span className="upload-btn-step">1</span>
-                    <div className="upload-btn-icon-wrap">🎯</div>
-                    <strong>{quizTopic ? 'Topic Set' : 'Enter Topic'}</strong>
-                    <small>{quizTopic ? (quizTopic.length > 16 ? quizTopic.slice(0, 14) + '…' : quizTopic) : 'Click to Set Topic'}</small>
-                  </button>
-                  {quizTopic && (
-                    <div className="file-chips">
-                      <span className="file-chip topic-chip">
-                        🎯 {quizTopic.length > 20 ? quizTopic.slice(0, 18) + '…' : quizTopic}
-                        <button
-                          className="file-chip-remove"
-                          onClick={() => setQuizTopic('')}
-                          title="Clear topic"
-                        >
-                          ×
-                        </button>
-                      </span>
+                    <span className="mini-btn-step">3</span>
+                    <div className="mini-btn-icon">🔍</div>
+                    <div className="mini-btn-text">
+                      <strong>Find Answers</strong>
+                      <small>{processingFiles ? 'Thinking...' : 'Start'}</small>
                     </div>
-                  )}
+                  </button>
                 </div>
+              )}
 
-                {/* Button 2: Upload Notes */}
-                <div className="upload-zone">
+              {/* Generate Quiz: 3 compact honeycomb buttons */}
+              {isGenerateQuiz && (
+                <div className="side-action-buttons">
                   <input
                     ref={quizNotesInputRef}
                     type="file"
@@ -595,76 +596,92 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                     onChange={(e) => setQuizNotesFiles((prev) => addFiles(prev, Array.from(e.target.files)))}
                     id="quiz-notes-upload"
                   />
+
+                  {/* 1: Enter Topic */}
                   <button
-                    className="upload-btn notes-btn"
+                    className={`mini-hex-btn topic-btn ${quizTopic ? 'has-value' : ''}`}
+                    onClick={() => {
+                      setTempTopicInput(quizTopic);
+                      setIsTopicModalOpen(true);
+                    }}
+                    disabled={loading || processingFiles}
+                    title="Enter Quiz Topic"
+                  >
+                    <span className="mini-btn-step">1</span>
+                    <div className="mini-btn-icon">🎯</div>
+                    <div className="mini-btn-text">
+                      <strong>Topic</strong>
+                      <small>{quizTopic ? (quizTopic.length > 9 ? quizTopic.slice(0, 8) + '…' : quizTopic) : 'Set Topic'}</small>
+                    </div>
+                  </button>
+
+                  {/* 2: Upload Notes */}
+                  <button
+                    className={`mini-hex-btn notes-btn ${quizNotesFiles.length > 0 ? 'has-value' : ''}`}
                     onClick={() => quizNotesInputRef.current?.click()}
                     disabled={loading || processingFiles}
+                    title="Upload Notes (Optional: PDF, PPT, Images)"
                   >
-                    <span className="upload-btn-step">2</span>
-                    <div className="upload-btn-icon-wrap">📚</div>
-                    <strong>Upload Notes</strong>
-                    <small>PDF · PPT · Images (Optional)</small>
-                  </button>
-                  {quizNotesFiles.length > 0 && (
-                    <div className="file-chips">
-                      {quizNotesFiles.map((f, i) => (
-                        <FileChip
-                          key={i}
-                          file={f}
-                          onRemove={() => setQuizNotesFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                        />
-                      ))}
+                    <span className="mini-btn-step">2</span>
+                    <div className="mini-btn-icon">📚</div>
+                    <div className="mini-btn-text">
+                      <strong>Notes</strong>
+                      <small>{quizNotesFiles.length > 0 ? `${quizNotesFiles.length} file${quizNotesFiles.length > 1 ? 's' : ''}` : 'Optional'}</small>
                     </div>
-                  )}
+                  </button>
+
+                  {/* 3: Generate Quiz CTA */}
+                  <button
+                    className="mini-hex-btn mini-hex-cta"
+                    onClick={handleGenerateQuiz}
+                    disabled={!canGenerateQuiz}
+                    title="Generate Practice Quiz"
+                  >
+                    <span className="mini-btn-step">3</span>
+                    <div className="mini-btn-icon">📝</div>
+                    <div className="mini-btn-text">
+                      <strong>Generate Quiz</strong>
+                      <small>{processingFiles ? 'Reading...' : 'Start'}</small>
+                    </div>
+                  </button>
                 </div>
+              )}
 
-                {/* Button 3: Generate Quiz */}
-                <button
-                  className="find-answers-btn generate-quiz-btn"
-                  onClick={handleGenerateQuiz}
-                  disabled={!canGenerateQuiz}
-                >
-                  <div className="upload-btn-icon-wrap">📝</div>
-                  <strong>Generate Quiz</strong>
-                  <small>{processingFiles ? 'Reading notes...' : 'Step 3 · Go!'}</small>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Input area */}
-          <div className="input-area">
-            <textarea
-              rows={2}
-              placeholder={
-                isFindAnswers
-                  ? 'Or type your question here...'
-                  : isGenerateQuiz
-                  ? (quizTopic ? `Topic is "${quizTopic}". Add extra instructions or paste notes here...` : 'Or type your topic / paste notes here...')
-                  : MODES[mode].placeholder
-              }
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (isFindAnswers) handleFindAnswers();
-                  else if (isGenerateQuiz) handleGenerateQuiz();
-                  else handleSend();
+              {/* Textarea */}
+              <textarea
+                rows={1}
+                placeholder={
+                  isFindAnswers
+                    ? 'Or type your question here...'
+                    : isGenerateQuiz
+                    ? (quizTopic ? `Topic: "${quizTopic}". Add extra instructions or notes here...` : 'Or type your topic / paste notes here...')
+                    : MODES[mode].placeholder
                 }
-              }}
-              disabled={loading || processingFiles}
-            />
-            <button
-              className="send-btn"
-              onClick={isFindAnswers ? handleFindAnswers : isGenerateQuiz ? handleGenerateQuiz : handleSend}
-              disabled={
-                loading || processingFiles ||
-                (isFindAnswers ? !canFindAnswers : isGenerateQuiz ? !canGenerateQuiz : !input.trim())
-              }
-            >
-              {loading || processingFiles ? '...' : 'Send ➔'}
-            </button>
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (isFindAnswers) handleFindAnswers();
+                    else if (isGenerateQuiz) handleGenerateQuiz();
+                    else handleSend();
+                  }
+                }}
+                disabled={loading || processingFiles}
+              />
+
+              {/* Send Button */}
+              <button
+                className="send-btn"
+                onClick={isFindAnswers ? handleFindAnswers : isGenerateQuiz ? handleGenerateQuiz : handleSend}
+                disabled={
+                  loading || processingFiles ||
+                  (isFindAnswers ? !canFindAnswers : isGenerateQuiz ? !canGenerateQuiz : !input.trim())
+                }
+              >
+                Send ➔
+              </button>
+            </div>
           </div>
         </div>
       </div>

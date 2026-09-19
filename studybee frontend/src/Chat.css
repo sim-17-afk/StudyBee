@@ -151,58 +151,258 @@
 
 /* ── Input area ──────────────────────────────────────────────────────────── */
 .input-area {
-  padding: 20px 24px;
-  background: rgba(255, 255, 255, 0.85);
+  padding: 12px 20px;
+  background: #FFFDF8;
   display: flex;
-  gap: 12px;
-  border-top: 1px solid #eee;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1.5px solid #FFDF70;
+  position: relative;
 }
 
-.input-area textarea {
+/* ── Active chips strip right above input row ────────────────────────────── */
+.input-chips-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 2px 6px;
+  border-bottom: 1px dashed rgba(255, 184, 0, 0.35);
+  animation: chip-pop 0.25s ease-out;
+}
+
+.input-chips-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9A6200;
+  margin-right: 4px;
+}
+
+/* ── Horizontal row: buttons + textarea + send ───────────────────────────── */
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* ── Buttons between left panel and text box ─────────────────────────────── */
+.side-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Compact Honeycomb Action Button */
+.mini-hex-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px 0 8px;
+  height: 44px;
+  background: linear-gradient(160deg, #FFFDE8 0%, #FFF4B0 45%, #FFDE50 100%);
+  border: 1.5px solid #FFD030;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(200, 130, 0, 0.16);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Wax-shine shimmer sweep */
+.mini-hex-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 28%,
+    rgba(255, 255, 255, 0.6) 46%,
+    transparent 64%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.45s ease;
+  pointer-events: none;
+}
+
+.mini-hex-btn:hover:not(:disabled)::before {
+  transform: translateX(130%);
+}
+
+.mini-hex-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(200, 120, 0, 0.28);
+  border-color: #FFA500;
+  background: linear-gradient(160deg, #FFFFF0 0%, #FFF8C0 45%, #FFE260 100%);
+}
+
+.mini-hex-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.mini-hex-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.mini-hex-btn.has-value {
+  background: linear-gradient(160deg, #FFF6C8 0%, #FFDF40 45%, #FFBA10 100%);
+  border-color: #FF8C00;
+  box-shadow: 0 2px 7px rgba(220, 120, 0, 0.28);
+}
+
+/* Step badge */
+.mini-btn-step {
+  width: 14px;
+  height: 14px;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  background: linear-gradient(135deg, #E06500, #FFA500);
+  font-size: 0.52rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* Icon in mini frame */
+.mini-btn-icon {
+  width: 26px;
+  height: 26px;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  background: linear-gradient(160deg, #FFF8DC 0%, #FFD700 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.mini-hex-btn:hover:not(:disabled) .mini-btn-icon {
+  transform: rotate(10deg) scale(1.1);
+}
+
+/* Text inside mini button */
+.mini-btn-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.mini-btn-text strong {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #663800;
+  white-space: nowrap;
+}
+
+.mini-btn-text small {
+  font-size: 0.58rem;
+  color: #8C5500;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* CTA button (Find Answers / Generate Quiz) */
+.mini-hex-cta {
+  background: linear-gradient(160deg, #FFB800 0%, #FF8C00 55%, #D95300 100%);
+  border: 1.5px solid #E06000;
+  box-shadow: 0 3px 8px rgba(210, 80, 0, 0.35);
+}
+
+.mini-hex-cta .mini-btn-icon {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.mini-hex-cta .mini-btn-text strong {
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(70, 25, 0, 0.4);
+}
+
+.mini-hex-cta .mini-btn-text small {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+}
+
+.mini-hex-cta:hover:not(:disabled) {
+  background: linear-gradient(160deg, #FFC014 0%, #FF9900 55%, #E66000 100%);
+  box-shadow: 0 5px 14px rgba(210, 80, 0, 0.5);
+  border-color: #B84500;
+}
+
+/* ── Textarea ────────────────────────────────────────────────────────────── */
+.input-row textarea {
   flex: 1;
-  padding: 13px 18px;
-  border: 1.5px solid #ddd;
-  border-radius: 14px;
+  min-height: 44px;
+  height: 44px;
+  padding: 11px 16px;
+  border: 1.5px solid #E0C068;
+  border-radius: 10px;
   outline: none;
-  font-size: 0.93rem;
+  font-size: 0.88rem;
   font-family: inherit;
   resize: none;
-  line-height: 1.5;
-  transition: border-color 0.2s;
-  background: #fff;
+  line-height: 1.4;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #ffffff;
+  box-sizing: border-box;
 }
 
-.input-area textarea:focus {
-  border-color: #FFB800;
+.input-row textarea:focus {
+  border-color: #FFA500;
+  box-shadow: 0 0 0 3px rgba(255, 180, 0, 0.2);
 }
 
-.input-area textarea:disabled {
+.input-row textarea:disabled {
   background: #fafafa;
   color: #aaa;
 }
 
+/* ── Send button ─────────────────────────────────────────────────────────── */
 .send-btn {
-  padding: 13px 22px;
+  height: 44px;
+  padding: 0 18px;
   background: linear-gradient(135deg, #FFB800, #FFA000);
   border: none;
-  border-radius: 14px;
+  border-radius: 10px;
   color: white;
   font-weight: 800;
+  font-size: 0.88rem;
   cursor: pointer;
   white-space: nowrap;
-  transition: opacity 0.2s, transform 0.15s;
-  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 3px 8px rgba(255, 160, 0, 0.35);
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .send-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  opacity: 0.9;
+  box-shadow: 0 5px 12px rgba(255, 160, 0, 0.45);
 }
 
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
