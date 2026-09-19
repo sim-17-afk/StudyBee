@@ -174,9 +174,16 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
   const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
   const [tempTopicInput, setTempTopicInput] = useState('');
 
+  // Summarize state (for summarize-notes mode)
+  const [summaryFiles, setSummaryFiles] = useState([]);
+  const [summaryStyle, setSummaryStyle] = useState('points'); // 'shorten' | 'points' | 'very-short'
+  const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false);
+
   const notesInputRef = useRef(null);
   const questionsInputRef = useRef(null);
   const quizNotesInputRef = useRef(null);
+  const summaryNotesInputRef = useRef(null);
+  const stylePickerRef = useRef(null);
   const bottomRef = useRef(null);
 
   const messages = chatHistories[mode];
@@ -184,6 +191,16 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (stylePickerRef.current && !stylePickerRef.current.contains(e.target)) {
+        setIsStyleMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const switchMode = (newMode) => {
     localStorage.setItem('studybee_feature', newMode);
@@ -195,6 +212,8 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
     setQuizTopic('');
     setQuizNotesFiles([]);
     setIsTopicModalOpen(false);
+    setSummaryFiles([]);
+    setIsStyleMenuOpen(false);
   };
 
   // ── Standard send (non-find-answers or typed question) ───────────────────────
@@ -401,6 +420,96 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
     }
   };
 
+  // ── Summarize Notes: process uploaded files & style then call AI ─────────────
+  const handleSummarizeNotes = async () => {
+    if (loading || processingFiles) return;
+    const typedNotes = input.trim();
+    if (summaryFiles.length === 0 && !typedNotes) return;
+
+    setProcessingFiles(true);
+
+    try {
+      let notesText = '';
+      const imageFiles = [];
+
+      for (const file of summaryFiles) {
+        const cat = getFileCategory(file);
+        if (cat === 'pdf') {
+          const text = await extractPdfText(file);
+          notesText += `\n[Notes from ${file.name}]:\n${text}\n`;
+        } else if (cat === 'image') {
+          const b64 = await fileToBase64(file);
+          imageFiles.push({ src: b64, label: `Notes image: ${file.name}` });
+          notesText += `\n[Image notes provided: ${file.name}]\n`;
+        } else if (cat === 'ppt') {
+          notesText += `\n[PowerPoint file "${file.name}" uploaded. Please summarize the key topics and concepts from this presentation.]\n`;
+        } else if (cat === 'text') {
+          const text = await file.text();
+          notesText += `\n[Notes from ${file.name}]:\n${text}\n`;
+        }
+      }
+
+      // Format based on summaryStyle
+      let styleInstruction = '';
+      let styleLabel = '';
+      if (summaryStyle === 'shorten') {
+        styleLabel = 'Shorten Notes';
+        styleInstruction = 'SHORTEN THE NOTES: Condense the provided notes into a clear, shortened version while preserving essential explanations, arguments, and context.';
+      } else if (summaryStyle === 'very-short') {
+        styleLabel = 'Very Short TL;DR';
+        styleInstruction = 'SUMMARIZE IN VERY SHORT: Provide an ultra-concise summary. Give a 2-3 sentence executive TL;DR overview followed by at most 3-4 key takeaway bullet points.';
+      } else {
+        styleLabel = 'Important Points';
+        styleInstruction = 'GIVE IMPORTANT POINTS: Extract and present the most critical exam concepts, facts, definitions, and key takeaways as clear, organized bullet points.';
+      }
+
+      const promptParts = [];
+      promptParts.push(`🎯 SUMMARY STYLE REQUESTED: ${styleInstruction}`);
+      if (notesText.trim()) {
+        promptParts.push(`📚 UPLOADED NOTES / MATERIAL:\n${notesText.trim()}`);
+      }
+      if (typedNotes) {
+        promptParts.push(`📝 NOTES / TEXT TO SUMMARIZE:\n${typedNotes}`);
+      }
+
+      const fullPrompt = promptParts.join('\n\n');
+
+      const parts = [];
+      if (summaryFiles.length > 0) parts.push(`${summaryFiles.length} file${summaryFiles.length > 1 ? 's' : ''}`);
+      if (typedNotes) parts.push('pasted text');
+      const displayLabel = `📜 Summarizing notes (${styleLabel}): ${parts.join(' + ') || 'notes'}`;
+
+      const userMsg = {
+        role: 'user',
+        text: fullPrompt,
+        displayText: displayLabel,
+        images: imageFiles.map((img) => img.src),
+      };
+
+      const updatedHistory = [...messages, userMsg];
+      setChatHistories((prev) => ({ ...prev, [mode]: updatedHistory }));
+      setInput('');
+      setSummaryFiles([]);
+      setProcessingFiles(false);
+      setLoading(true);
+
+      const reply = await callOpenRouter('summarize-notes', updatedHistory);
+      setChatHistories((prev) => ({
+        ...prev,
+        [mode]: [...updatedHistory, { role: 'bee', text: reply }],
+      }));
+    } catch (err) {
+      setChatHistories((prev) => ({
+        ...prev,
+        [mode]: [...messages, { role: 'bee', text: `⚠️ Error summarizing notes: ${err.message}` }],
+      }));
+      setProcessingFiles(false);
+    } finally {
+      setLoading(false);
+      setProcessingFiles(false);
+    }
+  };
+
   const addFiles = (existing, newFiles) => {
     const all = [...existing];
     for (const f of newFiles) {
@@ -411,8 +520,10 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
 
   const isFindAnswers = mode === 'find-answers';
   const isGenerateQuiz = mode === 'generate-quiz';
-  const canFindAnswers = (notesFiles.length > 0 || questionsFiles.length > 0 || input.trim()) && !loading && !processingFiles;
+  const isSummarizeNotes = mode === 'summarize-notes';
+  const canFindAnswers = (notesFiles.length > 0 || questionsFiles.length > 0 || Boolean(input.trim())) && !loading && !processingFiles;
   const canGenerateQuiz = (Boolean(quizTopic.trim()) || quizNotesFiles.length > 0 || Boolean(input.trim())) && !loading && !processingFiles;
+  const canSummarize = (summaryFiles.length > 0 || Boolean(input.trim())) && !loading && !processingFiles;
 
   return (
     <div className="chat-page">
@@ -463,9 +574,10 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
 
           {/* Input area */}
           <div className="input-area">
-            {/* Active Chips Strip (Topic / Attached Files) */}
+            {/* Active Chips Strip (Topic / Attached Files / Summary Style) */}
             {((isGenerateQuiz && (quizTopic || quizNotesFiles.length > 0)) ||
-              (isFindAnswers && (notesFiles.length > 0 || questionsFiles.length > 0))) && (
+              (isFindAnswers && (notesFiles.length > 0 || questionsFiles.length > 0)) ||
+              (isSummarizeNotes && (summaryFiles.length > 0 || summaryStyle))) && (
               <div className="input-chips-bar">
                 <span className="input-chips-label">Attached:</span>
                 {isGenerateQuiz && quizTopic && (
@@ -507,6 +619,29 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                       file={f}
                       onRemove={() =>
                         setQuestionsFiles((prev) => prev.filter((_, idx) => idx !== i))
+                      }
+                    />
+                  ))}
+                {isSummarizeNotes && (
+                  <span className="file-chip topic-chip">
+                    {summaryStyle === 'shorten' ? '📌' : summaryStyle === 'very-short' ? '⚡' : '⭐'}{' '}
+                    Option:{' '}
+                    <strong>
+                      {summaryStyle === 'shorten'
+                        ? 'Shorten Notes'
+                        : summaryStyle === 'very-short'
+                        ? 'Very Short TL;DR'
+                        : 'Important Points'}
+                    </strong>
+                  </span>
+                )}
+                {isSummarizeNotes &&
+                  summaryFiles.map((f, i) => (
+                    <FileChip
+                      key={i}
+                      file={f}
+                      onRemove={() =>
+                        setSummaryFiles((prev) => prev.filter((_, idx) => idx !== i))
                       }
                     />
                   ))}
@@ -647,6 +782,126 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                 </div>
               )}
 
+              {/* Summarize Notes: 3 compact honeycomb buttons */}
+              {isSummarizeNotes && (
+                <div className="side-action-buttons">
+                  <input
+                    ref={summaryNotesInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.ppt,.pptx,.txt,image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => setSummaryFiles((prev) => addFiles(prev, Array.from(e.target.files)))}
+                    id="summary-notes-upload"
+                  />
+
+                  {/* 1: Upload Notes */}
+                  <button
+                    className={`mini-hex-btn notes-btn ${summaryFiles.length > 0 ? 'has-value' : ''}`}
+                    onClick={() => summaryNotesInputRef.current?.click()}
+                    disabled={loading || processingFiles}
+                    title="Upload Notes (PDF, PPT, Images, TXT)"
+                  >
+                    <span className="mini-btn-step">1</span>
+                    <div className="mini-btn-icon">📚</div>
+                    <div className="mini-btn-text">
+                      <strong>Notes</strong>
+                      <small>{summaryFiles.length > 0 ? `${summaryFiles.length} file${summaryFiles.length > 1 ? 's' : ''}` : 'Upload'}</small>
+                    </div>
+                  </button>
+
+                  {/* 2: Summary Style / Options */}
+                  <div className="style-picker-container" ref={stylePickerRef}>
+                    <button
+                      className="mini-hex-btn style-btn has-value"
+                      onClick={() => setIsStyleMenuOpen((prev) => !prev)}
+                      disabled={loading || processingFiles}
+                      title="Choose Summary Option"
+                    >
+                      <span className="mini-btn-step">2</span>
+                      <div className="mini-btn-icon">
+                        {summaryStyle === 'shorten' ? '📌' : summaryStyle === 'very-short' ? '⚡' : '⭐'}
+                      </div>
+                      <div className="mini-btn-text">
+                        <strong>
+                          {summaryStyle === 'shorten' ? 'Shorten' : summaryStyle === 'very-short' ? 'Very Short' : 'Key Points'}
+                        </strong>
+                        <small>Options ▾</small>
+                      </div>
+                    </button>
+
+                    {/* Honeycomb Style Options Popover */}
+                    {isStyleMenuOpen && (
+                      <div className="style-popover-menu">
+                        <div className="style-popover-header">🍯 Summary Options</div>
+                        <button
+                          type="button"
+                          className={`style-option-item ${summaryStyle === 'shorten' ? 'active' : ''}`}
+                          onClick={() => {
+                            setSummaryStyle('shorten');
+                            setIsStyleMenuOpen(false);
+                          }}
+                        >
+                          <span className="style-option-icon">📌</span>
+                          <div className="style-option-text">
+                            <strong>Shorten the Notes</strong>
+                            <small>Condense text while keeping full context</small>
+                          </div>
+                          {summaryStyle === 'shorten' && <span className="style-check">✓</span>}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={`style-option-item ${summaryStyle === 'points' ? 'active' : ''}`}
+                          onClick={() => {
+                            setSummaryStyle('points');
+                            setIsStyleMenuOpen(false);
+                          }}
+                        >
+                          <span className="style-option-icon">⭐</span>
+                          <div className="style-option-text">
+                            <strong>Give Important Points</strong>
+                            <small>Essential bullet points & key exam concepts</small>
+                          </div>
+                          {summaryStyle === 'points' && <span className="style-check">✓</span>}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={`style-option-item ${summaryStyle === 'very-short' ? 'active' : ''}`}
+                          onClick={() => {
+                            setSummaryStyle('very-short');
+                            setIsStyleMenuOpen(false);
+                          }}
+                        >
+                          <span className="style-option-icon">⚡</span>
+                          <div className="style-option-text">
+                            <strong>Summarize in Very Short</strong>
+                            <small>Ultra-brief 2-3 sentence TL;DR recap</small>
+                          </div>
+                          {summaryStyle === 'very-short' && <span className="style-check">✓</span>}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3: Summarize Notes CTA */}
+                  <button
+                    className="mini-hex-btn mini-hex-cta"
+                    onClick={handleSummarizeNotes}
+                    disabled={!canSummarize}
+                    title="Summarize Notes"
+                  >
+                    <span className="mini-btn-step">3</span>
+                    <div className="mini-btn-icon">📜</div>
+                    <div className="mini-btn-text">
+                      <strong>Summarize</strong>
+                      <small>{processingFiles ? 'Reading...' : 'Start'}</small>
+                    </div>
+                  </button>
+                </div>
+              )}
+
               {/* Textarea */}
               <textarea
                 rows={1}
@@ -655,6 +910,8 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                     ? 'Or type your question here...'
                     : isGenerateQuiz
                     ? (quizTopic ? `Topic: "${quizTopic}". Add extra instructions or notes here...` : 'Or type your topic / paste notes here...')
+                    : isSummarizeNotes
+                    ? 'Or paste your notes / chapter text to summarize here...'
                     : MODES[mode].placeholder
                 }
                 value={input}
@@ -664,6 +921,7 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                     e.preventDefault();
                     if (isFindAnswers) handleFindAnswers();
                     else if (isGenerateQuiz) handleGenerateQuiz();
+                    else if (isSummarizeNotes) handleSummarizeNotes();
                     else handleSend();
                   }
                 }}
@@ -673,10 +931,18 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
               {/* Send Button */}
               <button
                 className="send-btn"
-                onClick={isFindAnswers ? handleFindAnswers : isGenerateQuiz ? handleGenerateQuiz : handleSend}
+                onClick={
+                  isFindAnswers
+                    ? handleFindAnswers
+                    : isGenerateQuiz
+                    ? handleGenerateQuiz
+                    : isSummarizeNotes
+                    ? handleSummarizeNotes
+                    : handleSend
+                }
                 disabled={
                   loading || processingFiles ||
-                  (isFindAnswers ? !canFindAnswers : isGenerateQuiz ? !canGenerateQuiz : !input.trim())
+                  (isFindAnswers ? !canFindAnswers : isGenerateQuiz ? !canGenerateQuiz : isSummarizeNotes ? !canSummarize : !input.trim())
                 }
               >
                 Send ➔
