@@ -25,7 +25,54 @@ export default function BeeBot({ isChatting, isTyping, mode, onQuickPrompt }) {
   const [isBubbleOpen, setIsBubbleOpen] = useState(false);
   const [isPopping, setIsPopping] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [eyeOffset, setEyeOffset] = useState({ x: 0, y: 0 });
   const bubbleTimeoutRef = useRef(null);
+  const svgRef = useRef(null);
+
+  // Track cursor movement so bee eyes follow mouse position smoothly
+  useEffect(() => {
+    let animationFrameId;
+
+    const handleMouseMove = (e) => {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(() => {
+        if (!svgRef.current) return;
+        const rect = svgRef.current.getBoundingClientRect();
+
+        // Midpoint of bee eyes (SVG coords: x=60, y=56 out of 120x120)
+        const beeFaceX = rect.left + rect.width * (60 / 120);
+        const beeFaceY = rect.top + rect.height * (56 / 120);
+
+        const deltaX = e.clientX - beeFaceX;
+        const deltaY = e.clientY - beeFaceY;
+        const distance = Math.hypot(deltaX, deltaY);
+
+        if (distance < 1) {
+          setEyeOffset({ x: 0, y: 0 });
+          return;
+        }
+
+        // Maximum displacement radius of pupil inside socket (in SVG coordinates)
+        const maxRadius = 3.0;
+        const strength = Math.min(maxRadius, distance / 35);
+        const angle = Math.atan2(deltaY, deltaX);
+
+        const offsetX = Math.cos(angle) * strength;
+        const offsetY = Math.sin(angle) * strength;
+
+        setEyeOffset({
+          x: Math.round(offsetX * 100) / 100,
+          y: Math.round(offsetY * 100) / 100,
+        });
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
 
   // Rotate chatting message while AI is thinking/loading
   useEffect(() => {
@@ -172,13 +219,22 @@ export default function BeeBot({ isChatting, isTyping, mode, onQuickPrompt }) {
         )}
 
         <svg
+          ref={svgRef}
           className="bee-bot-svg"
           viewBox="0 0 120 120"
-          width="74"
-          height="74"
+          width="98"
+          height="98"
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
+            {/* Eye Sockets Clip Paths to keep pupils inside sockets */}
+            <clipPath id="leftEyeClip">
+              <ellipse cx="51" cy="56" rx="6.2" ry="7.6" />
+            </clipPath>
+            <clipPath id="rightEyeClip">
+              <ellipse cx="69" cy="56" rx="6.2" ry="7.6" />
+            </clipPath>
+
             {/* Body Honey Gradient */}
             <linearGradient id="beeBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#FFF176" />
@@ -212,8 +268,8 @@ export default function BeeBot({ isChatting, isTyping, mode, onQuickPrompt }) {
             className="bee-ground-shadow"
             cx="60"
             cy="112"
-            rx="24"
-            ry="5"
+            rx="25"
+            ry="5.5"
             fill="rgba(220, 140, 0, 0.22)"
           />
 
@@ -323,8 +379,8 @@ export default function BeeBot({ isChatting, isTyping, mode, onQuickPrompt }) {
             <circle cx="87" cy="26" r="3.5" fill="#FFC107" stroke="#2E1C0C" strokeWidth="1" />
 
             {/* Eyes */}
-            {isChatting ? (
-              // Happy sparkling eyes when chatting
+            {isPopping ? (
+              // Joyful curved eyes when clicked/popping
               <g className="bee-eyes happy-eyes">
                 <path
                   d="M45 57 Q51 51 57 57"
@@ -342,17 +398,73 @@ export default function BeeBot({ isChatting, isTyping, mode, onQuickPrompt }) {
                 />
               </g>
             ) : (
-              // Big cute anime eyes with gloss
-              <g className="bee-eyes standard-eyes">
-                {/* Left eye */}
-                <ellipse cx="51" cy="56" rx="5" ry="6.5" fill="#241505" />
-                <circle cx="49" cy="53.5" r="2.2" fill="#FFFFFF" />
-                <circle cx="53" cy="58" r="1.1" fill="#FFFFFF" />
+              // Animated eyes tracking mouse cursor!
+              <g className="bee-eyes tracking-eyes">
+                {/* Left Eye Base */}
+                <ellipse
+                  cx="51"
+                  cy="56"
+                  rx="6.4"
+                  ry="7.8"
+                  fill="#FFFFFF"
+                  stroke="#2E1C0C"
+                  strokeWidth="1.4"
+                />
+                {/* Left Pupil (clipped to eye contour) */}
+                <g clipPath="url(#leftEyeClip)">
+                  <g
+                    className="bee-pupil-group"
+                    transform={`translate(${51 + eyeOffset.x}, ${56 + eyeOffset.y})`}
+                  >
+                    <ellipse cx="0" cy="0" rx="4.4" ry="5.6" fill="#241505" />
+                    <circle cx="-1.5" cy="-1.8" r="1.8" fill="#FFFFFF" />
+                    <circle cx="1.6" cy="1.6" r="0.95" fill="#FFFFFF" />
+                    {isChatting && (
+                      <circle cx="0" cy="0" r="1.1" fill="#FFD700" opacity="0.9" />
+                    )}
+                  </g>
+                </g>
+                {/* Left Eyelid Lash Accent */}
+                <path
+                  d="M44 49.5 Q51 46 58 49.5"
+                  fill="none"
+                  stroke="#2E1C0C"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
 
-                {/* Right eye */}
-                <ellipse cx="69" cy="56" rx="5" ry="6.5" fill="#241505" />
-                <circle cx="67" cy="53.5" r="2.2" fill="#FFFFFF" />
-                <circle cx="71" cy="58" r="1.1" fill="#FFFFFF" />
+                {/* Right Eye Base */}
+                <ellipse
+                  cx="69"
+                  cy="56"
+                  rx="6.4"
+                  ry="7.8"
+                  fill="#FFFFFF"
+                  stroke="#2E1C0C"
+                  strokeWidth="1.4"
+                />
+                {/* Right Pupil (clipped to eye contour) */}
+                <g clipPath="url(#rightEyeClip)">
+                  <g
+                    className="bee-pupil-group"
+                    transform={`translate(${69 + eyeOffset.x}, ${56 + eyeOffset.y})`}
+                  >
+                    <ellipse cx="0" cy="0" rx="4.4" ry="5.6" fill="#241505" />
+                    <circle cx="-1.5" cy="-1.8" r="1.8" fill="#FFFFFF" />
+                    <circle cx="1.6" cy="1.6" r="0.95" fill="#FFFFFF" />
+                    {isChatting && (
+                      <circle cx="0" cy="0" r="1.1" fill="#FFD700" opacity="0.9" />
+                    )}
+                  </g>
+                </g>
+                {/* Right Eyelid Lash Accent */}
+                <path
+                  d="M62 49.5 Q69 46 76 49.5"
+                  fill="none"
+                  stroke="#2E1C0C"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
               </g>
             )}
 
