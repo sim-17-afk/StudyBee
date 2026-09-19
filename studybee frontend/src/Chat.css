@@ -204,3 +204,174 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ── Upload Panel (Find Answers mode) ────────────────────────────────────── */
+.upload-panel {
+  padding: 14px 20px 10px;
+  background: rgba(255, 249, 227, 0.5);
+  border-top: 1px solid #f0e8c8;
+}
+
+.upload-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.upload-zone {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Shared upload button base */
+.upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border: 2px dashed #FFD166;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: #FFF3CC;
+  border-color: #FFB800;
+  transform: translateY(-1px);
+}
+
+.upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.upload-btn-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.upload-btn span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.upload-btn strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2E2E2E;
+  white-space: nowrap;
+}
+
+.upload-btn small {
+  font-size: 0.72rem;
+  color: #999;
+  white-space: nowrap;
+}
+
+/* Notes button accent */
+.notes-btn {
+  border-color: #FFD166;
+}
+
+/* Questions button accent */
+.questions-btn {
+  border-color: #FFAD4A;
+}
+
+/* Find Answers action button */
+.find-answers-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FFB800, #FFA000);
+  color: white;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  font-family: inherit;
+  flex-shrink: 0;
+  align-self: stretch;
+  min-width: 120px;
+  box-shadow: 0 4px 12px rgba(255, 160, 0, 0.3);
+}
+
+.find-answers-btn .upload-btn-icon {
+  font-size: 1.5rem;
+}
+
+.find-answers-btn strong {
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.find-answers-btn small {
+  font-size: 0.7rem;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.find-answers-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  opacity: 0.92;
+  box-shadow: 0 6px 16px rgba(255, 160, 0, 0.4);
+}
+
+.find-answers-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* File chips */
+.file-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #FFF3CC;
+  border: 1px solid #FFD700;
+  border-radius: 20px;
+  padding: 3px 10px 3px 8px;
+  font-size: 0.75rem;
+  color: #2E2E2E;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-chip-remove {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.file-chip-remove:hover {
+  color: #e74c3c;
+}
