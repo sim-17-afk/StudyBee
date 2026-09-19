@@ -163,13 +163,20 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // File upload state (only for find-answers mode)
+  // File upload state (for find-answers mode)
   const [notesFiles, setNotesFiles] = useState([]);
   const [questionsFiles, setQuestionsFiles] = useState([]);
   const [processingFiles, setProcessingFiles] = useState(false);
 
+  // Quiz state (for generate-quiz mode)
+  const [quizTopic, setQuizTopic] = useState('');
+  const [quizNotesFiles, setQuizNotesFiles] = useState([]);
+  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
+  const [tempTopicInput, setTempTopicInput] = useState('');
+
   const notesInputRef = useRef(null);
   const questionsInputRef = useRef(null);
+  const quizNotesInputRef = useRef(null);
   const bottomRef = useRef(null);
 
   const messages = chatHistories[mode];
@@ -185,6 +192,9 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
     setInput('');
     setNotesFiles([]);
     setQuestionsFiles([]);
+    setQuizTopic('');
+    setQuizNotesFiles([]);
+    setIsTopicModalOpen(false);
   };
 
   // ── Standard send (non-find-answers or typed question) ───────────────────────
@@ -211,6 +221,90 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
       }));
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ── Generate Quiz: process topic & notes then call AI ────────────────────────
+  const handleGenerateQuiz = async () => {
+    if (loading || processingFiles) return;
+    const effectiveTopic = quizTopic.trim() || input.trim();
+    if (!effectiveTopic && quizNotesFiles.length === 0) return;
+
+    setProcessingFiles(true);
+
+    try {
+      let notesText = '';
+      const imageFiles = [];
+
+      // Process uploaded notes files
+      for (const file of quizNotesFiles) {
+        const cat = getFileCategory(file);
+        if (cat === 'pdf') {
+          const text = await extractPdfText(file);
+          notesText += `\n[Notes from ${file.name}]:\n${text}\n`;
+        } else if (cat === 'image') {
+          const b64 = await fileToBase64(file);
+          imageFiles.push({ src: b64, label: `Notes image: ${file.name}` });
+          notesText += `\n[Image notes provided: ${file.name}]\n`;
+        } else if (cat === 'ppt') {
+          notesText += `\n[PowerPoint file "${file.name}" uploaded. Please generate quiz questions based on key concepts from this topic.]\n`;
+        } else if (cat === 'text') {
+          const text = await file.text();
+          notesText += `\n[Notes from ${file.name}]:\n${text}\n`;
+        }
+      }
+
+      // Build prompt parts
+      const promptParts = [];
+      if (effectiveTopic) {
+        promptParts.push(`🎯 QUIZ TOPIC:\n${effectiveTopic}`);
+      }
+      if (notesText.trim()) {
+        promptParts.push(`📚 STUDY NOTES / REFERENCE MATERIAL:\n${notesText.trim()}`);
+      }
+      if (input.trim() && input.trim() !== effectiveTopic) {
+        promptParts.push(`✏️ EXTRA INSTRUCTIONS:\n${input.trim()}`);
+      }
+
+      const fullPrompt = promptParts.join('\n\n') +
+        '\n\nPlease create a 5-question practice quiz based on the above topic and notes. Include multiple-choice options (A, B, C, D), difficulty levels (Easy, Medium, Hard), and provide an Answer Key with brief explanations at the end.';
+
+      // Summary label for display bubble
+      const summaryParts = [];
+      if (effectiveTopic) summaryParts.push(`Topic "${effectiveTopic}"`);
+      if (quizNotesFiles.length > 0) summaryParts.push(`${quizNotesFiles.length} notes file${quizNotesFiles.length > 1 ? 's' : ''}`);
+      if (input.trim() && input.trim() !== effectiveTopic) summaryParts.push('custom instructions');
+      const displayLabel = `📝 Generating quiz for: ${summaryParts.join(' + ') || 'notes'}`;
+
+      const userMsg = {
+        role: 'user',
+        text: fullPrompt,
+        displayText: displayLabel,
+        images: imageFiles.map((img) => img.src),
+      };
+
+      const updatedHistory = [...messages, userMsg];
+      setChatHistories((prev) => ({ ...prev, [mode]: updatedHistory }));
+      setInput('');
+      setQuizTopic('');
+      setQuizNotesFiles([]);
+      setProcessingFiles(false);
+      setLoading(true);
+
+      const reply = await callOpenRouter('generate-quiz', updatedHistory);
+      setChatHistories((prev) => ({
+        ...prev,
+        [mode]: [...updatedHistory, { role: 'bee', text: reply }],
+      }));
+    } catch (err) {
+      setChatHistories((prev) => ({
+        ...prev,
+        [mode]: [...messages, { role: 'bee', text: `⚠️ Error generating quiz: ${err.message}` }],
+      }));
+      setProcessingFiles(false);
+    } finally {
+      setLoading(false);
+      setProcessingFiles(false);
     }
   };
 
@@ -316,7 +410,9 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
   };
 
   const isFindAnswers = mode === 'find-answers';
+  const isGenerateQuiz = mode === 'generate-quiz';
   const canFindAnswers = (notesFiles.length > 0 || questionsFiles.length > 0 || input.trim()) && !loading && !processingFiles;
+  const canGenerateQuiz = (Boolean(quizTopic.trim()) || quizNotesFiles.length > 0 || Boolean(input.trim())) && !loading && !processingFiles;
 
   return (
     <div className="chat-page">
@@ -452,31 +548,206 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
             </div>
           )}
 
+          {/* ── Generate Quiz Panel ───────────────────────────────────────── */}
+          {isGenerateQuiz && (
+            <div className="upload-panel quiz-panel">
+              <div className="upload-panel-label">📝 Honeycomb Quiz Creator</div>
+              <div className="upload-row">
+                {/* Button 1: Enter Topic */}
+                <div className="upload-zone">
+                  <button
+                    className={`upload-btn topic-btn ${quizTopic ? 'has-value' : ''}`}
+                    onClick={() => {
+                      setTempTopicInput(quizTopic);
+                      setIsTopicModalOpen(true);
+                    }}
+                    disabled={loading || processingFiles}
+                  >
+                    <span className="upload-btn-step">1</span>
+                    <div className="upload-btn-icon-wrap">🎯</div>
+                    <strong>{quizTopic ? 'Topic Set' : 'Enter Topic'}</strong>
+                    <small>{quizTopic ? (quizTopic.length > 16 ? quizTopic.slice(0, 14) + '…' : quizTopic) : 'Click to Set Topic'}</small>
+                  </button>
+                  {quizTopic && (
+                    <div className="file-chips">
+                      <span className="file-chip topic-chip">
+                        🎯 {quizTopic.length > 20 ? quizTopic.slice(0, 18) + '…' : quizTopic}
+                        <button
+                          className="file-chip-remove"
+                          onClick={() => setQuizTopic('')}
+                          title="Clear topic"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Button 2: Upload Notes */}
+                <div className="upload-zone">
+                  <input
+                    ref={quizNotesInputRef}
+                    type="file"
+                    multiple
+                    accept=".pdf,.ppt,.pptx,.txt,image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => setQuizNotesFiles((prev) => addFiles(prev, Array.from(e.target.files)))}
+                    id="quiz-notes-upload"
+                  />
+                  <button
+                    className="upload-btn notes-btn"
+                    onClick={() => quizNotesInputRef.current?.click()}
+                    disabled={loading || processingFiles}
+                  >
+                    <span className="upload-btn-step">2</span>
+                    <div className="upload-btn-icon-wrap">📚</div>
+                    <strong>Upload Notes</strong>
+                    <small>PDF · PPT · Images (Optional)</small>
+                  </button>
+                  {quizNotesFiles.length > 0 && (
+                    <div className="file-chips">
+                      {quizNotesFiles.map((f, i) => (
+                        <FileChip
+                          key={i}
+                          file={f}
+                          onRemove={() => setQuizNotesFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Button 3: Generate Quiz */}
+                <button
+                  className="find-answers-btn generate-quiz-btn"
+                  onClick={handleGenerateQuiz}
+                  disabled={!canGenerateQuiz}
+                >
+                  <div className="upload-btn-icon-wrap">📝</div>
+                  <strong>Generate Quiz</strong>
+                  <small>{processingFiles ? 'Reading notes...' : 'Step 3 · Go!'}</small>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Input area */}
           <div className="input-area">
             <textarea
               rows={2}
-              placeholder={MODES[mode].placeholder}
+              placeholder={
+                isFindAnswers
+                  ? 'Or type your question here...'
+                  : isGenerateQuiz
+                  ? (quizTopic ? `Topic is "${quizTopic}". Add extra instructions or paste notes here...` : 'Or type your topic / paste notes here...')
+                  : MODES[mode].placeholder
+              }
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  isFindAnswers ? handleFindAnswers() : handleSend();
+                  if (isFindAnswers) handleFindAnswers();
+                  else if (isGenerateQuiz) handleGenerateQuiz();
+                  else handleSend();
                 }
               }}
               disabled={loading || processingFiles}
             />
             <button
               className="send-btn"
-              onClick={isFindAnswers ? handleFindAnswers : handleSend}
-              disabled={loading || processingFiles || (isFindAnswers ? !canFindAnswers : !input.trim())}
+              onClick={isFindAnswers ? handleFindAnswers : isGenerateQuiz ? handleGenerateQuiz : handleSend}
+              disabled={
+                loading || processingFiles ||
+                (isFindAnswers ? !canFindAnswers : isGenerateQuiz ? !canGenerateQuiz : !input.trim())
+              }
             >
               {loading || processingFiles ? '...' : 'Send ➔'}
             </button>
           </div>
         </div>
       </div>
+
+      {/* ── Topic Input Honeycomb Modal ───────────────────────────────── */}
+      {isTopicModalOpen && (
+        <div className="topic-modal-overlay" onClick={() => setIsTopicModalOpen(false)}>
+          <div className="topic-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="topic-modal-header">
+              <div className="topic-modal-title">
+                <span>🎯</span> Enter Quiz Topic
+              </div>
+              <button
+                className="topic-modal-close"
+                onClick={() => setIsTopicModalOpen(false)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <p className="topic-modal-desc">
+              Enter any subject, chapter, or concept you want StudyBee to quiz you on:
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (tempTopicInput.trim()) {
+                  setQuizTopic(tempTopicInput.trim());
+                  setIsTopicModalOpen(false);
+                }
+              }}
+            >
+              <input
+                type="text"
+                autoFocus
+                className="topic-modal-input"
+                placeholder="e.g. Photosynthesis, World War II, Calculus, Cell Biology..."
+                value={tempTopicInput}
+                onChange={(e) => setTempTopicInput(e.target.value)}
+              />
+
+              <div className="topic-suggestions">
+                <span className="topic-suggestions-label">Popular topics:</span>
+                {[
+                  'Photosynthesis',
+                  'World War II',
+                  'Calculus Derivatives',
+                  'Cell Biology',
+                  'Organic Chemistry',
+                  'Python Basics',
+                  'Microeconomics',
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="topic-suggestion-tag"
+                    onClick={() => setTempTopicInput(suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+
+              <div className="topic-modal-actions">
+                <button
+                  type="button"
+                  className="topic-cancel-btn"
+                  onClick={() => setIsTopicModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="topic-save-btn"
+                  disabled={!tempTopicInput.trim()}
+                >
+                  Set Topic ➔
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
