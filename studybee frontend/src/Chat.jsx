@@ -368,6 +368,7 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
           {/* ── Find Answers Upload Panel ─────────────────────────────────── */}
           {isFindAnswers && (
             <div className="upload-panel">
+              <div className="upload-panel-label">⚡ Quick Upload Workflow</div>
               <div className="upload-row">
                 {/* Upload Notes */}
                 <div className="upload-zone">
@@ -385,11 +386,10 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                     onClick={() => notesInputRef.current?.click()}
                     disabled={loading || processingFiles}
                   >
-                    <span className="upload-btn-icon">📚</span>
-                    <span>
-                      <strong>Upload Notes</strong>
-                      <small>PDF, PPT, Images</small>
-                    </span>
+                    <span className="upload-btn-step">1</span>
+                    <div className="upload-btn-icon-wrap">📚</div>
+                    <strong>Upload Notes</strong>
+                    <small>PDF · PPT · Images</small>
                   </button>
                   {notesFiles.length > 0 && (
                     <div className="file-chips">
@@ -420,11 +420,10 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                     onClick={() => questionsInputRef.current?.click()}
                     disabled={loading || processingFiles}
                   >
-                    <span className="upload-btn-icon">❓</span>
-                    <span>
-                      <strong>Upload Questions</strong>
-                      <small>PDF, PPT, Images, TXT</small>
-                    </span>
+                    <span className="upload-btn-step">2</span>
+                    <div className="upload-btn-icon-wrap">❓</div>
+                    <strong>Upload Questions</strong>
+                    <small>PDF · PPT · Images · TXT</small>
                   </button>
                   {questionsFiles.length > 0 && (
                     <div className="file-chips">
@@ -445,11 +444,9 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                   onClick={handleFindAnswers}
                   disabled={!canFindAnswers}
                 >
-                  <span className="upload-btn-icon">🔍</span>
-                  <span>
-                    <strong>Find Answers</strong>
-                    <small>{processingFiles ? 'Processing...' : 'Let\'s go!'}</small>
-                  </span>
+                  <div className="upload-btn-icon-wrap">🔍</div>
+                  <strong>Find Answers</strong>
+                  <small>{processingFiles ? 'Processing...' : 'Step 3 · Go!'}</small>
                 </button>
               </div>
             </div>
