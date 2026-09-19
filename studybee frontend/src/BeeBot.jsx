@@ -222,8 +222,8 @@ export default function BeeBot({ isChatting, isTyping, mode, onQuickPrompt }) {
           ref={svgRef}
           className="bee-bot-svg"
           viewBox="0 0 120 120"
-          width="98"
-          height="98"
+          width="180"
+          height="180"
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
