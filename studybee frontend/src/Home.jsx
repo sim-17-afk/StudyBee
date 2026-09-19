@@ -33,6 +33,16 @@ const Home = ({ onLogout, onSelectFeature }) => {
     <div className="home-container">
       <div className="home-drip"></div>
 
+      {/* Little falling honey drops */}
+      <div className="home-honey-drop drop-1"></div>
+      <div className="home-honey-drop drop-2"></div>
+      <div className="home-honey-drop drop-3"></div>
+      <div className="home-honey-drop drop-4"></div>
+      <div className="home-honey-drop drop-5"></div>
+      <div className="home-honey-drop drop-6"></div>
+      <div className="home-honey-drop drop-7"></div>
+      <div className="home-honey-drop drop-8"></div>
+
       <nav className="home-nav">
         <h1 className="home-logo">Study<span>Bee</span></h1>
         <button className="logout-link" onClick={onLogout}>Exit Hive</button>
