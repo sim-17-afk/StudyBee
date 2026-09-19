@@ -1,7 +1,7 @@
 .chat-page {
   display: flex;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
   background: #fff;
   background-image: radial-gradient(circle at 20% 20%, #FFF9E3 0%, transparent 40%);
   overflow: hidden;
@@ -65,16 +65,15 @@
 .chat-main {
   flex: 1;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 30px;
+  align-items: stretch;
+  padding: 20px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .chat-window {
   width: 100%;
-  max-width: 860px;
-  height: 90vh;
+  height: 100%;
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 215, 0, 0.3);
