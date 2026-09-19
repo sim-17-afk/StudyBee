@@ -203,6 +203,7 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
   const [summaryFiles, setSummaryFiles] = useState([]);
   const [summaryStyle, setSummaryStyle] = useState('points'); // 'shorten' | 'points' | 'very-short'
   const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const notesInputRef = useRef(null);
   const questionsInputRef = useRef(null);
@@ -239,6 +240,7 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
     setIsTopicModalOpen(false);
     setSummaryFiles([]);
     setIsStyleMenuOpen(false);
+    setIsMobileSidebarOpen(false);
   };
 
   // ── Standard send (non-find-answers or typed question) ───────────────────────
@@ -586,9 +588,27 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
 
   return (
     <div className="chat-page">
+      {/* Mobile Backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="chat-sidebar">
-        <div className="sidebar-logo">Study<span>Bee</span></div>
+      <div className={`chat-sidebar ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
+        <div className="sidebar-header-row">
+          <div className="sidebar-logo">Study<span>Bee</span></div>
+          <button
+            type="button"
+            className="mobile-sidebar-close"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            aria-label="Close menu"
+          >
+            ×
+          </button>
+        </div>
 
         {Object.entries(MODES).map(([key, cfg]) => (
           <button
@@ -600,7 +620,15 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
           </button>
         ))}
 
-        <button className="back-btn" onClick={onBack}>← Dashboard</button>
+        <button
+          className="back-btn"
+          onClick={() => {
+            setIsMobileSidebarOpen(false);
+            onBack();
+          }}
+        >
+          ← Dashboard
+        </button>
       </div>
 
       {/* Main area */}
@@ -609,6 +637,14 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
           {/* Mode header */}
           <div className="chat-header">
             <div className="chat-header-info">
+              <button
+                type="button"
+                className="mobile-sidebar-toggle"
+                onClick={() => setIsMobileSidebarOpen(true)}
+                aria-label="Open menu"
+              >
+                ☰
+              </button>
               <span className="chat-mode-title">{MODES[mode].label}</span>
               {mode === 'ai-bee' && (
                 <span className="bee-live-badge">
@@ -1019,51 +1055,53 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
                 </div>
               )}
 
-              {/* Textarea */}
-              <textarea
-                rows={1}
-                placeholder={
-                  isFindAnswers
-                    ? 'Or type your question here...'
-                    : isGenerateQuiz
-                    ? (quizTopic ? `Topic: "${quizTopic}". Add extra instructions or notes here...` : 'Or type your topic / paste notes here...')
-                    : isSummarizeNotes
-                    ? 'Or paste your notes / chapter text to summarize here...'
-                    : MODES[mode].placeholder
-                }
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (isFindAnswers) handleFindAnswers();
-                    else if (isGenerateQuiz) handleGenerateQuiz();
-                    else if (isSummarizeNotes) handleSummarizeNotes();
-                    else handleSend();
+              {/* Main input wrapper: textarea + send button */}
+              <div className="input-main-wrap">
+                <textarea
+                  rows={1}
+                  placeholder={
+                    isFindAnswers
+                      ? 'Or type your question here...'
+                      : isGenerateQuiz
+                      ? (quizTopic ? `Topic: "${quizTopic}". Add extra instructions or notes here...` : 'Or type your topic / paste notes here...')
+                      : isSummarizeNotes
+                      ? 'Or paste your notes / chapter text to summarize here...'
+                      : MODES[mode].placeholder
                   }
-                }}
-                disabled={loading || processingFiles}
-              />
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (isFindAnswers) handleFindAnswers();
+                      else if (isGenerateQuiz) handleGenerateQuiz();
+                      else if (isSummarizeNotes) handleSummarizeNotes();
+                      else handleSend();
+                    }
+                  }}
+                  disabled={loading || processingFiles}
+                />
 
-              {/* Send Button */}
-              <button
-                className="send-btn"
-                onClick={
-                  isFindAnswers
-                    ? handleFindAnswers
-                    : isGenerateQuiz
-                    ? handleGenerateQuiz
-                    : isSummarizeNotes
-                    ? handleSummarizeNotes
-                    : handleSend
-                }
-                disabled={
-                  loading || processingFiles ||
-                  (isFindAnswers ? !canFindAnswers : isGenerateQuiz ? !canGenerateQuiz : isSummarizeNotes ? !canSummarize : !input.trim())
-                }
-              >
-                Send ➔
-              </button>
+                {/* Send Button */}
+                <button
+                  className="send-btn"
+                  onClick={
+                    isFindAnswers
+                      ? handleFindAnswers
+                      : isGenerateQuiz
+                      ? handleGenerateQuiz
+                      : isSummarizeNotes
+                      ? handleSummarizeNotes
+                      : handleSend
+                  }
+                  disabled={
+                    loading || processingFiles ||
+                    (isFindAnswers ? !canFindAnswers : isGenerateQuiz ? !canGenerateQuiz : isSummarizeNotes ? !canSummarize : !input.trim())
+                  }
+                >
+                  Send ➔
+                </button>
+              </div>
             </div>
           </div>
 
