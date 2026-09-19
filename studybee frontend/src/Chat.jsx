@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
+import BeeBot from './BeeBot';
 import './Chat.css';
 
 // Set the PDF.js worker source
@@ -10,6 +11,30 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
 const MODEL = 'openai/gpt-4o-mini';
+
+// ── AI Bee Quick Starter Suggestions ─────────────────────────────────────────
+const AI_BEE_PROMPTS = [
+  {
+    icon: '💡',
+    title: 'Explain Simply',
+    prompt: 'Can you explain Photosynthesis in simple terms with everyday analogies?',
+  },
+  {
+    icon: '⚡',
+    title: 'Exam Study Tips',
+    prompt: 'What are the top 5 scientifically proven techniques to memorize study material faster?',
+  },
+  {
+    icon: '📝',
+    title: 'Essay Outline Helper',
+    prompt: 'Help me outline a well-structured essay about Artificial Intelligence in modern education.',
+  },
+  {
+    icon: '🧠',
+    title: 'Test My Knowledge',
+    prompt: 'Can you ask me 3 challenging questions to test my understanding of the Solar System?',
+  },
+];
 
 // ── Per-mode config ───────────────────────────────────────────────────────────
 const MODES = {
@@ -241,6 +266,40 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ── Quick Prompt send (from AI Bee starter cards or BeeBot) ───────────────────
+  const handleQuickPrompt = async (promptText) => {
+    if (loading || processingFiles || !promptText.trim()) return;
+
+    const userMsg = { role: 'user', text: promptText.trim() };
+    const updatedHistory = [...messages, userMsg];
+    setChatHistories((prev) => ({ ...prev, [mode]: updatedHistory }));
+    setInput('');
+    setLoading(true);
+
+    try {
+      const reply = await callOpenRouter(mode, updatedHistory);
+      setChatHistories((prev) => ({
+        ...prev,
+        [mode]: [...updatedHistory, { role: 'bee', text: reply }],
+      }));
+    } catch (err) {
+      setChatHistories((prev) => ({
+        ...prev,
+        [mode]: [...updatedHistory, { role: 'bee', text: `⚠️ Bzzzt! Something went wrong: ${err.message}` }],
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Clear / Reset conversation ───────────────────────────────────────────────
+  const handleClearChat = () => {
+    setChatHistories((prev) => ({
+      ...prev,
+      [mode]: [{ role: 'bee', text: MODES[mode].greeting }],
+    }));
   };
 
   // ── Generate Quiz: process topic & notes then call AI ────────────────────────
@@ -546,27 +605,85 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
 
       {/* Main area */}
       <div className="chat-main">
-        <div className="chat-window">
+        <div className={`chat-window mode-${mode}`}>
           {/* Mode header */}
           <div className="chat-header">
-            <span className="chat-mode-title">{MODES[mode].label}</span>
+            <div className="chat-header-info">
+              <span className="chat-mode-title">{MODES[mode].label}</span>
+              {mode === 'ai-bee' && (
+                <span className="bee-live-badge">
+                  <span className="bee-pulse-dot" /> Online & Buzzing 🍯
+                </span>
+              )}
+            </div>
+
+            {messages.length > 1 && (
+              <button
+                className="chat-header-action-btn"
+                onClick={handleClearChat}
+                title="Start a fresh chat"
+              >
+                🧹 New Chat
+              </button>
+            )}
           </div>
 
           {/* Messages */}
           <div className="messages-container">
+            {/* AI Bee Honeycomb Quick Starters */}
+            {mode === 'ai-bee' && messages.length <= 1 && (
+              <div className="ai-bee-starter-container">
+                <div className="ai-bee-starter-header">
+                  <div className="starter-badge">🍯 Sweet Suggestions</div>
+                  <h4>What would you like to explore today?</h4>
+                  <p>Pick a sweet starter below or ask anything about your studies:</p>
+                </div>
+                <div className="ai-bee-prompts-grid">
+                  {AI_BEE_PROMPTS.map((item, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="ai-bee-prompt-card"
+                      onClick={() => handleQuickPrompt(item.prompt)}
+                      disabled={loading}
+                    >
+                      <div className="prompt-card-icon">{item.icon}</div>
+                      <div className="prompt-card-text">
+                        <strong>{item.title}</strong>
+                        <small>"{item.prompt}"</small>
+                      </div>
+                      <span className="prompt-card-arrow">➔</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {messages.map((msg, i) => (
-              <div key={i} className={`message-bubble ${msg.role}`}>
-                {/* Show display label if available, else full text */}
-                {(msg.displayText || msg.text).split('\n').map((line, j) => (
-                  <span key={j}>{line}<br /></span>
-                ))}
+              <div key={i} className={`message-row ${msg.role}`}>
+                {msg.role === 'bee' && (
+                  <div className="bee-msg-avatar" title="StudyBee">
+                    🐝
+                  </div>
+                )}
+                <div className={`message-bubble ${msg.role}`}>
+                  {/* Show display label if available, else full text */}
+                  {(msg.displayText || msg.text).split('\n').map((line, j) => (
+                    <span key={j}>{line}<br /></span>
+                  ))}
+                </div>
               </div>
             ))}
             {(loading || processingFiles) && (
-              <div className="message-bubble bee loading-bubble">
-                <span className="dot-flashing">
-                  {processingFiles ? '📂 Reading your files...' : '🐝 thinking'}
-                </span>
+              <div className="message-row bee">
+                <div className="bee-msg-avatar" title="StudyBee">
+                  🐝
+                </div>
+                <div className="message-bubble bee loading-bubble">
+                  <span className="dot-flashing">
+                    {processingFiles ? '📂 Reading your files...' : '🐝 thinking sweet thoughts...'}
+                  </span>
+                </div>
               </div>
             )}
             <div ref={bottomRef} />
@@ -949,6 +1066,14 @@ const Chat = ({ onBack, initialMode = 'ai-bee' }) => {
               </button>
             </div>
           </div>
+
+          {/* Honey Bee Bot mascot at the bottom corner */}
+          <BeeBot
+            isChatting={loading || processingFiles}
+            isTyping={Boolean(input.trim())}
+            mode={mode}
+            onQuickPrompt={handleQuickPrompt}
+          />
         </div>
       </div>
 
