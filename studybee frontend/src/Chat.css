@@ -25,6 +25,7 @@
   font-weight: 900;
   margin-bottom: 30px;
   color: #2E2E2E;
+  white-space: nowrap;
 }
 .sidebar-logo span { color: #FFB800; }
 
