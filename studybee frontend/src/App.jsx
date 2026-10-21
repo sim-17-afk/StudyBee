@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Login from './Login';
 import Home from './Home';
 import Chat from './Chat';
+import ProgressDashboard from './Dashboard';
 import './App.css';
 
 function App() {
@@ -15,10 +16,14 @@ function App() {
     () => localStorage.getItem('studybee_feature') || 'ai-bee'
   );
 
+  // Current user email (used for dashboard API auth header)
+  const userEmail = localStorage.getItem('studybee_current_user') || '';
+
   const handleLogin = (email) => {
     localStorage.setItem('studybee_session', 'true');
     localStorage.setItem('studybee_current_user', email);
     setIsLoggedIn(true);
+    setScreen('dashboard');
   };
 
   const handleLogout = () => {
@@ -51,6 +56,7 @@ function App() {
       <Home
         onLogout={handleLogout}
         onSelectFeature={handleSelectFeature}
+        onViewProgress={() => goTo('progress')}
       />
     );
   }
@@ -60,6 +66,16 @@ function App() {
       <Chat
         onBack={() => goTo('dashboard')}
         initialMode={activeFeature}
+        userEmail={userEmail}
+      />
+    );
+  }
+
+  if (screen === 'progress') {
+    return (
+      <ProgressDashboard
+        onBack={() => goTo('dashboard')}
+        userEmail={userEmail}
       />
     );
   }

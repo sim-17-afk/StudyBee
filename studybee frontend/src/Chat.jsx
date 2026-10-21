@@ -15,24 +15,24 @@ const MODEL = 'openai/gpt-4o-mini';
 // ── AI Bee Quick Starter Suggestions ─────────────────────────────────────────
 const AI_BEE_PROMPTS = [
   {
-    icon: '💡',
-    title: 'Explain Simply',
-    prompt: 'Can you explain Photosynthesis in simple terms with everyday analogies?',
+    icon: '💻',
+    title: 'Explain a CS Concept',
+    prompt: 'Can you explain how recursion works in programming with a simple real-world analogy and a Python code example?',
   },
   {
-    icon: '⚡',
-    title: 'Exam Study Tips',
-    prompt: 'What are the top 5 scientifically proven techniques to memorize study material faster?',
-  },
-  {
-    icon: '📝',
-    title: 'Essay Outline Helper',
-    prompt: 'Help me outline a well-structured essay about Artificial Intelligence in modern education.',
+    icon: '⚙️',
+    title: 'Data Structures Guide',
+    prompt: 'What are the key differences between Arrays, Linked Lists, Stacks, and Queues? When should I use each one?',
   },
   {
     icon: '🧠',
-    title: 'Test My Knowledge',
-    prompt: 'Can you ask me 3 challenging questions to test my understanding of the Solar System?',
+    title: 'Test My CS Knowledge',
+    prompt: 'Ask me 3 challenging questions on Object-Oriented Programming concepts like inheritance, polymorphism, and encapsulation.',
+  },
+  {
+    icon: '🚀',
+    title: 'Algorithm Breakdown',
+    prompt: 'Explain how Merge Sort works step by step, with time complexity analysis and a code example in C or Python.',
   },
 ];
 

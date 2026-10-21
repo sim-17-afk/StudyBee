@@ -149,6 +149,31 @@
   transform: translateY(-1px);
 }
 
+.home-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-link {
+  background: linear-gradient(135deg, #FFB800, #FF8C00);
+  border: none;
+  padding: 8px 18px;
+  border-radius: 10px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  box-shadow: 0 3px 10px rgba(255, 140, 0, 0.25);
+}
+
+.progress-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(255, 140, 0, 0.35);
+}
+
+
 .welcome-text {
   text-align: center;
   margin: clamp(20px, 4vw, 38px) 16px clamp(24px, 4vw, 42px);

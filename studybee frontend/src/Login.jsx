@@ -3,10 +3,6 @@ import './Login.css';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// ── Local storage helpers ─────────────────────────────────────────────────────
-const getUsers = () => JSON.parse(localStorage.getItem('studybee_users') || '{}');
-const saveUsers = (users) => localStorage.setItem('studybee_users', JSON.stringify(users));
-
 const Login = ({ onLogin }) => {
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail]       = useState('');
@@ -14,6 +10,7 @@ const Login = ({ onLogin }) => {
   const [showPass, setShowPass] = useState(false);
   const [errors, setErrors]     = useState({});
   const [loading, setLoading]   = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
   const validate = () => {
     const errs = {};
@@ -30,7 +27,7 @@ const Login = ({ onLogin }) => {
     return errs;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
@@ -38,37 +35,48 @@ const Login = ({ onLogin }) => {
     setErrors({});
     setLoading(true);
 
-    // Small delay to feel responsive
-    setTimeout(() => {
-      const key = email.trim().toLowerCase();
-      const users = getUsers();
+    const key = email.trim().toLowerCase();
+
+    try {
+      const endpoint = isSignup ? '/api/register' : '/api/login';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: key, password }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setErrors({ server: data.error || 'Authentication failed. Please check your credentials.' });
+        setLoading(false);
+        return;
+      }
 
       if (isSignup) {
-        // ── Register ──
-        if (users[key]) {
-          setErrors({ server: 'An account with this email already exists.' });
-          setLoading(false);
-          return;
-        }
-        users[key] = { email: key, password };
-        saveUsers(users);
-        onLogin(key);
+        // Switch to login page after successful signup
+        setIsSignup(false);
+        setEmail('');
+        setPassword('');
+        setShowPass(false);
+        setLoading(false);
+        setSuccessMsg('🎉 Account created in MongoDB Atlas! Please log in to continue.');
       } else {
-        // ── Login ──
-        const user = users[key];
-        if (!user || user.password !== password) {
-          setErrors({ server: 'Invalid email or password.' });
-          setLoading(false);
-          return;
-        }
         onLogin(key);
       }
-    }, 400);
+    } catch (err) {
+      console.error('Auth request failed:', err);
+      setErrors({
+        server: 'Unable to reach backend server. Make sure the backend is running on port 5000.',
+      });
+      setLoading(false);
+    }
   };
 
   const switchMode = () => {
     setIsSignup(!isSignup);
     setErrors({});
+    setSuccessMsg('');
     setEmail('');
     setPassword('');
     setShowPass(false);
@@ -94,6 +102,9 @@ const Login = ({ onLogin }) => {
           {isSignup ? 'Create your Hive Account' : 'Welcome to the Hive'}
         </p>
 
+        {successMsg && (
+          <div className="success-banner">{successMsg}</div>
+        )}
         {errors.server && (
           <div className="error-banner">{errors.server}</div>
         )}
@@ -122,27 +133,25 @@ const Login = ({ onLogin }) => {
               onChange={(e) => { setPassword(e.target.value); setErrors(p => ({ ...p, password: '' })); }}
               autoComplete={isSignup ? 'new-password' : 'current-password'}
             />
-            {isSignup && (
-              <button
-                type="button"
-                className="toggle-pass"
-                onClick={() => setShowPass(!showPass)}
-                aria-label={showPass ? 'Hide password' : 'Show password'}
-              >
-                {showPass ? (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                )}
-              </button>
-            )}
+            <button
+              type="button"
+              className="toggle-pass"
+              onClick={() => setShowPass(!showPass)}
+              aria-label={showPass ? 'Hide password' : 'Show password'}
+            >
+              {showPass ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              )}
+            </button>
             {errors.password && <span className="field-error">{errors.password}</span>}
             {isSignup && !errors.password && (
               <span className="pass-hint">Minimum 8 characters</span>

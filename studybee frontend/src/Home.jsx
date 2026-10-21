@@ -1,7 +1,7 @@
 import React from 'react';
 import './Home.css';
 
-const Home = ({ onLogout, onSelectFeature }) => {
+const Home = ({ onLogout, onSelectFeature, onViewProgress }) => {
   const features = [
     {
       id: 'find-answers',
@@ -63,7 +63,10 @@ const Home = ({ onLogout, onSelectFeature }) => {
 
       <nav className="home-nav">
         <h1 className="home-logo">Study<span>Bee</span></h1>
-        <button className="logout-link" onClick={onLogout}>Exit Hive</button>
+        <div className="home-nav-actions">
+          <button className="progress-link" onClick={onViewProgress}>📊 My Progress</button>
+          <button className="logout-link" onClick={onLogout}>Exit Hive</button>
+        </div>
       </nav>
 
       <main className="dashboard">
