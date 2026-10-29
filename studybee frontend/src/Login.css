@@ -2,9 +2,10 @@
   --honey-yellow: #FFD700;
   --honey-saturated: #FFB800; 
   --honey-accent: #FFA500;
-  --bee-charcoal: #2E2E2E;
-  --bg-pure-white: #FFFFFF;
-  --hex-faint: #FFFDF0;
+  --honey-dark: #FF8C00;
+  --hive-bg: #1C1108;
+  --hive-text: #F5E6C8;
+  --hive-muted: rgba(245, 230, 200, 0.6);
 }
 
 .login-container {
@@ -16,29 +17,29 @@
   align-items: center;
   position: relative;
   overflow: hidden;
-  background-color: var(--bg-pure-white);
+  background-color: var(--hive-bg);
+  color: var(--hive-text);
   padding: 24px 16px;
   box-sizing: border-box;
+  font-family: 'Inter', system-ui, sans-serif;
   
-  /* Background Hexagons */
-  background-image:  
-    linear-gradient(30deg, var(--hex-faint) 12%, transparent 12.5%, transparent 87%, var(--hex-faint) 87.5%, var(--hex-faint)),
-    linear-gradient(150deg, var(--hex-faint) 12%, transparent 12.5%, transparent 87%, var(--hex-faint) 87.5%, var(--hex-faint));
-  background-size: 80px 140px;
+  /* Honeycomb geometric background from My Progress */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V16L28 0l28 16v34zM28 100L0 84V66l28 16 28-16v18z' fill='none' stroke='rgba(255,184,0,0.06)' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 56px 100px;
 }
 
-/* THE FIX: Tileable Drip Ceiling */
+/* ── Tileable Drip Ceiling ── */
 .honey-ceiling-drip {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100px;
-  background-color: var(--honey-saturated);
+  background: linear-gradient(180deg, #FFD54F 0%, #FFB800 60%, #FF8C00 100%);
   z-index: 10;
-  box-shadow: 0 10px 25px rgba(255, 184, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(255, 140, 0, 0.45);
   
-  /* This SVG creates a repeating "U" shape drip */
+  /* Tileable repeating "U" shape drip */
   -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 0 v60 Q25 100 50 60 Q75 100 100 60 v-60 z" fill="black"/></svg>');
   mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 0 v60 Q25 100 50 60 Q75 100 100 60 v-60 z" fill="black"/></svg>');
   
@@ -56,17 +57,33 @@
   }
 }
 
-/* BIG DROPS */
+/* ── Falling Honey Drops ── */
 .honey-drop {
   position: absolute;
-  background: var(--honey-saturated);
-  width: 25px;
-  height: 40px;
+  background: linear-gradient(180deg, #FFD54F 0%, #FFB800 60%, #FF9100 100%);
+  width: 22px;
+  height: 36px;
   border-radius: 50% 50% 50% 50% / 100% 100% 40% 40%;
   top: -50px;
   z-index: 2;
-  box-shadow: inset -3px -5px 8px rgba(0,0,0,0.1), 0 5px 15px rgba(255, 184, 0, 0.3);
+  box-shadow: 
+    inset -2px -4px 6px rgba(180, 80, 0, 0.3),
+    inset 1px 2px 3px rgba(255, 255, 255, 0.6),
+    0 6px 18px rgba(255, 160, 0, 0.4);
   animation: dripFall 6s infinite ease-in;
+}
+
+/* Glossy highlight dot on drop */
+.honey-drop::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 4px;
+  width: 4px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  transform: rotate(-25deg);
 }
 
 /* Randomize positions */
@@ -74,73 +91,107 @@
 .honey-drop:nth-child(3) { left: 40%; animation-delay: 2s; transform: scale(0.8); }
 .honey-drop:nth-child(4) { left: 70%; animation-delay: 4s; transform: scale(1.2); }
 .honey-drop:nth-child(5) { left: 85%; animation-delay: 1.5s; }
+.honey-drop:nth-child(6) { left: 28%; animation-delay: 3.2s; transform: scale(0.9); }
+.honey-drop:nth-child(7) { left: 55%; animation-delay: 4.8s; transform: scale(1.1); }
+.honey-drop:nth-child(8) { left: 92%; animation-delay: 2.7s; transform: scale(0.75); }
 
 @keyframes dripFall {
   0% { transform: translateY(0); opacity: 1; }
   100% { transform: translateY(110vh); opacity: 0.2; }
 }
 
+/* ── Card with Glassmorphic Amber Theme ── */
 .honey-card {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
   padding: 48px 40px;
   width: 100%;
-  max-width: 390px;
+  max-width: 400px;
   text-align: center;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.06);
-  border: 4px solid var(--honey-yellow);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 184, 0, 0.1);
+  border: 2px solid rgba(255, 184, 0, 0.25);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 24px;
   z-index: 5;
   clip-path: polygon(10% 0%, 90% 0%, 100% 15%, 100% 85%, 90% 100%, 10% 100%, 0% 85%, 0% 15%);
   box-sizing: border-box;
   margin: 16px auto;
+  position: relative;
+}
+
+.honey-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(circle at top, rgba(255, 184, 0, 0.1), transparent 75%);
+  pointer-events: none;
 }
 
 @media (max-width: 480px) {
   .honey-card {
-    padding: 36px 20px 30px;
+    padding: 36px 22px 30px;
     max-width: 100%;
     clip-path: polygon(7% 0%, 93% 0%, 100% 10%, 100% 90%, 93% 100%, 7% 100%, 0% 90%, 0% 10%);
-    border-width: 3px;
   }
 }
 
 .honey-title {
-  color: var(--bee-charcoal);
+  color: var(--hive-text);
   font-size: clamp(2rem, 6vw, 2.7rem);
   font-weight: 900;
   white-space: nowrap;
+  letter-spacing: -0.5px;
 }
 
 .bee-span { color: var(--honey-saturated); }
 
-.subtitle { color: #888; margin-bottom: 24px; font-size: 0.88rem; }
+.subtitle {
+  color: var(--hive-muted);
+  margin-bottom: 24px;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
 
 .input-box {
   position: relative;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .input-box input {
   width: 100%;
-  padding: 15px;
-  border: 1.5px solid #eee;
+  padding: 15px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 184, 0, 0.2);
   border-radius: 12px;
+  color: var(--hive-text);
+  font-size: 0.92rem;
+  font-family: inherit;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
+}
+
+.input-box input::placeholder {
+  color: rgba(245, 230, 200, 0.35);
 }
 
 .input-box input:focus {
-  border-color: var(--honey-yellow);
+  border-color: var(--honey-saturated);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 16px rgba(255, 184, 0, 0.25);
 }
 
 .input-box.has-error input {
-  border-color: #e74c3c;
+  border-color: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
 }
 
 .field-error {
   display: block;
-  color: #e74c3c;
+  color: #fca5a5;
   font-size: 0.75rem;
+  font-weight: 600;
   text-align: left;
   margin-top: 4px;
   margin-bottom: 6px;
@@ -149,7 +200,7 @@
 
 .pass-hint {
   display: block;
-  color: #aaa;
+  color: rgba(245, 230, 200, 0.4);
   font-size: 0.72rem;
   text-align: left;
   margin-top: 4px;
@@ -168,19 +219,19 @@
 
 .toggle-pass {
   position: absolute;
-  top: 13px;
+  top: 14px;
   right: 14px;
   background: none;
   border: none;
   cursor: pointer;
   padding: 2px;
-  color: #aaa;
+  color: rgba(245, 230, 200, 0.45);
   display: flex;
   align-items: center;
   transition: color 0.2s;
 }
 
-.toggle-pass:hover { color: var(--honey-accent); }
+.toggle-pass:hover { color: var(--honey-saturated); }
 
 .toggle-pass svg {
   width: 20px;
@@ -189,24 +240,26 @@
 
 /* Server-level error banner */
 .error-banner {
-  background: #ffeaea;
-  border: 1.5px solid #e74c3c;
-  color: #c0392b;
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1.5px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  border-radius: 12px;
+  padding: 11px 14px;
   font-size: 0.82rem;
+  font-weight: 600;
   margin-bottom: 16px;
   text-align: left;
 }
 
 /* Success banner (shown after signup) */
 .success-banner {
-  background: #eaffea;
-  border: 1.5px solid #27ae60;
-  color: #1e8449;
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1.5px solid rgba(34, 197, 94, 0.35);
+  color: #86efac;
+  border-radius: 12px;
+  padding: 11px 14px;
   font-size: 0.82rem;
+  font-weight: 600;
   margin-bottom: 16px;
   text-align: left;
 }
@@ -214,21 +267,47 @@
 .login-btn {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, var(--honey-yellow), var(--honey-accent));
+  background: linear-gradient(135deg, var(--honey-saturated), var(--honey-dark));
   border: none;
   border-radius: 12px;
-  color: #fff;
+  color: #1C1108;
   font-weight: 900;
+  font-size: 0.96rem;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  margin-top: 8px;
-  transition: opacity 0.2s, transform 0.1s;
+  margin-top: 10px;
+  box-shadow: 0 4px 18px rgba(255, 140, 0, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
 }
 
-.login-btn:hover:not(:disabled) { transform: translateY(-2px); opacity: 0.92; }
-.login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.login-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 140, 0, 0.5);
+}
 
-.toggle-text { margin-top: 20px; color: #999; font-size: 0.8rem; }
-.toggle-text span { color: var(--honey-accent); font-weight: 800; cursor: pointer; }
+.login-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.toggle-text {
+  margin-top: 22px;
+  color: rgba(245, 230, 200, 0.5);
+  font-size: 0.82rem;
+}
+
+.toggle-text span {
+  color: var(--honey-saturated);
+  font-weight: 800;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.toggle-text span:hover {
+  color: #FFD875;
+  text-decoration: underline;
+}
 
 .honey-title::after {
   content: ' 🐝';
