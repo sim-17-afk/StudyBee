@@ -411,14 +411,19 @@ const ProgressDashboard = ({ onBack, userEmail }) => {
   const loadAll = useCallback(async () => {
     setLoading(true); setError('');
     try {
+      const now = new Date();
+      const clientDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const [ov, wk, wt, rec, hist] = await Promise.all([
-        apiFetch('/api/dashboard/overview', userEmail),
+        apiFetch(`/api/dashboard/overview?clientDate=${clientDate}`, userEmail),
         apiFetch('/api/dashboard/weekly-progress', userEmail),
         apiFetch('/api/dashboard/weak-topics', userEmail),
         apiFetch('/api/dashboard/recommendations', userEmail),
         apiFetch('/api/dashboard/quiz-history', userEmail),
       ]);
       setOverview(ov); setWeekly(wk);
+      if (ov?.studyStreak) {
+        localStorage.setItem('studybee_streak', String(ov.studyStreak));
+      }
       setWeakTopics(wt.weakTopics || []);
       setRecs(rec.recommendations || []);
       setHistory(hist.history || []);
@@ -500,7 +505,7 @@ const ProgressDashboard = ({ onBack, userEmail }) => {
               <div className="db-card db-card-fire">
                 <div className="db-card-inner">
                   <div className="db-card-icon">🔥</div>
-                  <div className="db-card-value">{overview?.studyStreak ?? 0}</div>
+                  <div className="db-card-value">{overview?.studyStreak ?? (parseInt(localStorage.getItem('studybee_streak'), 10) || 1)}</div>
                   <div className="db-card-label">Day Streak</div>
                   <div className="db-card-sub">Consecutive study days</div>
                 </div>

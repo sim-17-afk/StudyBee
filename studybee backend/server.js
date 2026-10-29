@@ -33,6 +33,47 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function formatDateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function calculateStreak(dateStrings, referenceDateStr) {
+  const datesSet = new Set(dateStrings || []);
+  if (!referenceDateStr) {
+    referenceDateStr = formatDateKey(new Date());
+  }
+
+  const parts = referenceDateStr.split('-').map(Number);
+  let current = new Date(parts[0], parts[1] - 1, parts[2]);
+
+  let todayKey = formatDateKey(current);
+
+  // If today isn't in datesSet, check if yesterday was.
+  if (!datesSet.has(todayKey)) {
+    const yesterday = new Date(current);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yKey = formatDateKey(yesterday);
+    if (datesSet.has(yKey)) {
+      current = yesterday;
+    } else {
+      return 0;
+    }
+  }
+
+  let streak = 0;
+  while (true) {
+    const k = formatDateKey(current);
+    if (datesSet.has(k)) {
+      streak++;
+      current.setDate(current.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
+
 // Resolve userId from email string stored in localStorage session
 async function resolveUser(req, res) {
   const email = req.headers['x-user-email'];
@@ -53,7 +94,7 @@ async function resolveUser(req, res) {
 // POST /api/register
 app.post('/api/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, clientDate } = req.body;
 
     if (!email || !emailRegex.test(email)) {
       return res.status(400).json({ error: 'Please provide a valid email address.' });
@@ -73,12 +114,19 @@ app.post('/api/register', async (req, res) => {
       return res.status(409).json({ error: 'An account with this email already exists.' });
     }
 
+    const todayStr = clientDate && typeof clientDate === 'string' ? clientDate : formatDateKey(new Date());
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ email: key, password: hashedPassword });
+    const newUser = await User.create({
+      email: key,
+      password: hashedPassword,
+      streak: 1,
+      lastLoginDate: todayStr,
+      loginDates: [todayStr],
+    });
 
     return res.status(201).json({
       message: 'Account created successfully!',
-      user: { email: newUser.email },
+      user: { email: newUser.email, streak: 1 },
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -89,7 +137,7 @@ app.post('/api/register', async (req, res) => {
 // POST /api/login
 app.post('/api/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, clientDate } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required.' });
@@ -112,13 +160,55 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
+    const todayStr = clientDate && typeof clientDate === 'string' ? clientDate : formatDateKey(new Date());
+    const loginDates = Array.isArray(user.loginDates) ? user.loginDates : [];
+    if (!loginDates.includes(todayStr)) {
+      loginDates.push(todayStr);
+    }
+    const currentStreak = calculateStreak(loginDates, todayStr);
+    user.streak = currentStreak;
+    user.lastLoginDate = todayStr;
+    user.loginDates = loginDates;
+    await user.save();
+
     return res.status(200).json({
       message: 'Login successful!',
-      user: { email: user.email },
+      user: { email: user.email, streak: currentStreak },
     });
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({ error: 'Server error during login. Please try again.' });
+  }
+});
+
+// POST /api/user/record-streak — records user daily activity and increments streak
+app.post('/api/user/record-streak', async (req, res) => {
+  try {
+    const user = await resolveUser(req, res);
+    if (!user) return;
+
+    const { clientDate } = req.body || {};
+    const todayStr = clientDate && typeof clientDate === 'string' ? clientDate : formatDateKey(new Date());
+
+    const loginDates = Array.isArray(user.loginDates) ? user.loginDates : [];
+    if (!loginDates.includes(todayStr)) {
+      loginDates.push(todayStr);
+    }
+
+    const currentStreak = calculateStreak(loginDates, todayStr);
+    user.streak = currentStreak;
+    user.lastLoginDate = todayStr;
+    user.loginDates = loginDates;
+    await user.save();
+
+    return res.json({
+      streak: currentStreak,
+      loginDates,
+      message: 'Streak updated successfully!',
+    });
+  } catch (error) {
+    console.error('Record streak error:', error);
+    return res.status(500).json({ error: 'Failed to record streak.' });
   }
 });
 
@@ -295,32 +385,21 @@ app.get('/api/dashboard/overview', async (req, res) => {
     const weekMins = Math.floor((weekSeconds % 3600) / 60);
     const studyTimeLabel = weekHours > 0 ? `${weekHours}h ${weekMins}m` : `${weekMins}m`;
 
-    // Streak calculation
+    // Streak calculation: combine user.loginDates + study sessions + quiz attempts
+    const studyDays = new Set(user.loginDates || []);
     const allSessions = await StudySession.find({ userId, endedAt: { $ne: null } }).sort({ startedAt: -1 });
-    const studyDays = new Set(
-      allSessions.map((s) => {
-        const d = new Date(s.startedAt);
-        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      })
-    );
-    // Also count quiz attempts as activity
+    allSessions.forEach((s) => {
+      const d = new Date(s.startedAt);
+      studyDays.add(formatDateKey(d));
+    });
     const allAttemptsForStreak = await QuizAttempt.find({ userId }).sort({ createdAt: -1 });
     allAttemptsForStreak.forEach((a) => {
       const d = new Date(a.createdAt);
-      studyDays.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+      studyDays.add(formatDateKey(d));
     });
 
-    let streak = 0;
-    let checkDate = new Date();
-    while (true) {
-      const key = `${checkDate.getFullYear()}-${checkDate.getMonth()}-${checkDate.getDate()}`;
-      if (studyDays.has(key)) {
-        streak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
-      }
-    }
+    const clientDate = (req.query && req.query.clientDate) || formatDateKey(new Date());
+    const streak = Math.max(calculateStreak(Array.from(studyDays), clientDate), user.streak || 1);
 
     return res.json({
       overallAccuracy,

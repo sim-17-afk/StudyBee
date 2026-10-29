@@ -37,13 +37,16 @@ const Login = ({ onLogin }) => {
 
     const key = email.trim().toLowerCase();
 
+    const now = new Date();
+    const clientDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
     try {
       const apiBase = import.meta.env.VITE_API_URL || '';
       const endpoint = `${apiBase}${isSignup ? '/api/register' : '/api/login'}`;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: key, password }),
+        body: JSON.stringify({ email: key, password, clientDate }),
       });
 
       const data = await response.json().catch(() => ({}));
@@ -63,7 +66,9 @@ const Login = ({ onLogin }) => {
         setLoading(false);
         setSuccessMsg('🎉 Account created in MongoDB Atlas! Please log in to continue.');
       } else {
-        onLogin(key);
+        const streak = data.user?.streak || 1;
+        localStorage.setItem('studybee_streak', String(streak));
+        onLogin(key, streak);
       }
     } catch (err) {
       console.error('Auth request failed:', err);

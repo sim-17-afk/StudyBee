@@ -13,6 +13,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    streak: {
+      type: Number,
+      default: 1,
+    },
+    lastLoginDate: {
+      type: String,
+      default: '',
+    },
+    loginDates: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,
