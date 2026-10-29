@@ -38,7 +38,8 @@ const Login = ({ onLogin }) => {
     const key = email.trim().toLowerCase();
 
     try {
-      const endpoint = isSignup ? '/api/register' : '/api/login';
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const endpoint = `${apiBase}${isSignup ? '/api/register' : '/api/login'}`;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

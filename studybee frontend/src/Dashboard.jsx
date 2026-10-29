@@ -280,7 +280,8 @@ const STYLES = `
    HELPERS
 ───────────────────────────────────────────────────────────────────────────── */
 async function apiFetch(path, userEmail) {
-  const res = await fetch(path, { headers: { 'x-user-email': userEmail } });
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  const res = await fetch(`${apiBase}${path}`, { headers: { 'x-user-email': userEmail } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
