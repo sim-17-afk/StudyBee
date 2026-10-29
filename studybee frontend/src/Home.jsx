@@ -1,7 +1,7 @@
 import React from 'react';
 import './Home.css';
 
-const Home = ({ onLogout, onSelectFeature, onViewProgress, streak = 1 }) => {
+const Home = ({ onLogout, onSelectFeature, onViewProgress }) => {
   const features = [
     {
       id: 'find-answers',
@@ -64,11 +64,6 @@ const Home = ({ onLogout, onSelectFeature, onViewProgress, streak = 1 }) => {
       <nav className="home-nav">
         <h1 className="home-logo">Study<span>Bee</span></h1>
         <div className="home-nav-actions">
-          <div className="home-streak-pill" onClick={onViewProgress} title="Click to view your progress">
-            <span className="home-streak-fire">🔥</span>
-            <span className="home-streak-count">{streak}</span>
-            <span className="home-streak-label">{streak === 1 ? 'Day Streak' : 'Days Streak'}</span>
-          </div>
           <button className="progress-link" onClick={onViewProgress}>📊 My Progress</button>
           <button className="logout-link" onClick={onLogout}>Exit Hive</button>
         </div>

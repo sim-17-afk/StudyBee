@@ -89,7 +89,6 @@ function App() {
         onLogout={handleLogout}
         onSelectFeature={handleSelectFeature}
         onViewProgress={() => goTo('progress')}
-        streak={streak}
       />
     );
   }
